@@ -28,7 +28,7 @@ function blastCells(g,p,c){const {C,NB,IDX}=geo(g.R);if(p==='bomb')return[c,...N
 const canPower=(g,p)=>!g.over&&!g.puTurn&&!g.used[g.turn][p]&&(g.power[g.turn]>0||g.coins[g.turn]>=EXTRA_COST);
 const powerCost=g=>g.power[g.turn]>0?0:EXTRA_COST;
 const swapCost=g=>g.swaps[g.turn]>0?0:EXTRA_COST;
-const canSwap=g=>!g.over&&(g.swaps[g.turn]>0||g.coins[g.turn]>=EXTRA_COST);
+const canSwap=g=>!g.over&&!g.swTurn&&g.trays[g.turn].length>0&&(g.swaps[g.turn]>0||g.coins[g.turn]>=EXTRA_COST);
 function spend(g){if(g.power[g.turn]>0)g.power[g.turn]--;else g.coins[g.turn]-=EXTRA_COST;}
 function empties(g){const o=[];g.b.forEach((v,i)=>{if(!v)o.push(i);});return o;}
 function finishCheck(g){const full=!g.b.includes(0);if(full||g.done.every(d=>d>=g.turns)){g.over=true;g.full=full;g.winner=g.sc[0]>g.sc[1]?0:g.sc[1]>g.sc[0]?1:-1;}}
@@ -36,13 +36,13 @@ function finishCheck(g){const full=!g.b.includes(0);if(full||g.done.every(d=>d>=
 function apply(g,a){if(g.over||!a)return null;const s=g.turn;
  if(a.t==='boost'){if(a.p!=='double'&&a.p!=='triple'||!canPower(g,a.p)||g.drops)return null;spend(g);g.used[s][a.p]=1;g.puTurn=true;g.mult[s]=a.p==='double'?2:3;g.moveN++;return{t:'boost',p:a.p};}
  if(a.t==='blast'){if(a.p!=='bomb'&&a.p!=='cross'||!canPower(g,a.p)||!(a.c>=0&&a.c<g.b.length))return null;const cells=blastCells(g,a.p,a.c);spend(g);g.used[s][a.p]=1;g.puTurn=true;const hit=cells.filter(c=>g.b[c]);hit.forEach(c=>g.b[c]=0);g.moveN++;return{t:'blast',p:a.p,cells,hit};}
- if(a.t==='swap'){if(!canSwap(g))return null;if(g.swaps[s]>0)g.swaps[s]--;else g.coins[s]-=EXTRA_COST;g.trays[s]=[draw(g),draw(g),draw(g)];g.moveN++;return{t:'swap'};}
+ if(a.t==='swap'){if(!canSwap(g))return null;if(g.swaps[s]>0)g.swaps[s]--;else g.coins[s]-=EXTRA_COST;const n=g.trays[s].length;g.trays[s]=[];for(let k=0;k<n;k++)g.trays[s].push(draw(g));g.swTurn=true;g.moveN++;return{t:'swap',n};}
  if(a.t==='drop'){const v=g.trays[s][a.k];if(!v||!(a.i>=0&&a.i<g.b.length)||g.b[a.i])return null;const r=resolve(g.R,g.b,a.i,v);const m=g.mult[s];const pts=r.pts*m;
   g.b=r.b;g.sc[side(g,s)]+=pts;g.pts[s]+=pts;g.trays[s].splice(a.k,1);g.drops=(g.drops|0)+1;g.tp=(g.tp|0)+pts;
   const st=g.stats[s];st.merges+=r.steps.filter(x=>!x.nova).length;st.best=Math.max(st.best,pts);st.combo=Math.max(st.combo,r.steps.length);st.hexes+=r.steps.reduce((n,x)=>n+x.cells.length,0);r.steps.forEach(x=>{if(x.nv)st.maxV=Math.max(st.maxV,x.nv);});
   g.moveN++;g.last={seat:s,i:a.i,v,pts,mult:m,steps:r.steps};const turnPts=g.tp,dropN=g.drops;
   const end=g.drops>=DROPS||!g.trays[s].length||!g.b.includes(0);
-  if(end){g.mult[s]=1;while(g.trays[s].length<3)g.trays[s].push(draw(g));g.done[s]++;g.puTurn=false;g.drops=0;g.tp=0;
+  if(end){g.mult[s]=1;while(g.trays[s].length<3)g.trays[s].push(draw(g));g.done[s]++;g.puTurn=false;g.swTurn=false;g.drops=0;g.tp=0;
    let n=s;for(let k=0;k<g.N;k++){n=(n+1)%g.N;if(g.done[n]<g.turns)break;}g.turn=n;}
   finishCheck(g);return{t:'drop',v,i:a.i,pts,mult:m,steps:r.steps,seat:s,dropN,turnEnd:end,turnPts};}
  return null;}
