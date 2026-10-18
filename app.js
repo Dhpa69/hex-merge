@@ -1,6 +1,6 @@
 'use strict';
 // Hex Merge v2 app: modes, UI, coins, missions, streaks, achievements, ranks, leaderboard, daily, online, team, share.
-const VER='v2',SITE='https://dhpa69.github.io/hex-merge/';
+const VER='v3',SITE='https://dhpa69.github.io/hex-merge/';
 const L=HexL,$=id=>document.getElementById(id);
 const COLORS=['','#3fd8ff','#4dff9a','#ffe14d','#ff9f40','#ff4f6d','#d45cff','#6f7bff','#ffffff','#ffd700'];
 const LS=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v;}catch(e){return d;}},SS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
@@ -52,7 +52,7 @@ const PU=[{k:'double',i:'✖2',n:'Double'},{k:'triple',i:'✖3',n:'Triple'},{k:'
 function render(){if(!g)return;const solo=g.N===1;
  $('nm0').textContent=sideLabel(0);$('sc0').textContent=g.sc[0].toLocaleString();$('pl1').style.visibility=solo?'hidden':'';if(!solo){$('nm1').textContent=sideLabel(1);$('sc1').textContent=g.sc[1].toLocaleString();}
  $('pl0').classList.toggle('on',L.side(g,g.turn)===0&&!g.over);$('pl1').classList.toggle('on',L.side(g,g.turn)===1&&!g.over);
- $('turnN').textContent=Math.min(g.turns,g.done[g.turn]+1)+'/'+g.turns;$('turnL').textContent=g.N===4?seatName(g.turn).slice(0,8).toUpperCase():'MOVE';
+ $('turnN').textContent=Math.min(g.turns,g.done[g.turn]+1)+'/'+g.turns;$('turnL').dataset.d=g.drops;$('turnL').textContent=g.N===4?seatName(g.turn).slice(0,8).toUpperCase():'MOVE';
  $('chatBtn').style.visibility=S.mode==='online'||S.mode==='team-online'?'':'hidden';
  renderTray();renderPU();}
 function renderTray(){const t=$('tray');t.innerHTML='';const vs=viewSeat();const mine=isHumanTurn()&&vs===g.turn;(g.trays[vs]||[]).forEach((v,k)=>{const d=document.createElement('div');d.className='tp'+(mine&&sel===k?' sel':'')+(mine?'':' lock');
@@ -60,11 +60,11 @@ function renderTray(){const t=$('tray');t.innerHTML='';const vs=viewSeat();const
 function renderPU(){const p=$('pups');p.innerHTML='';const s=viewSeat(),my=isHumanTurn()&&s===g.turn;
  PU.forEach(u=>{const d=document.createElement('div');let used,cost,act=false;if(u.k==='swap'){used=false;cost=g.swaps[s]>0?'FREE':'50🪙';}else{used=!!g.used[s][u.k];cost=used?'used':g.power[s]>0?'FREE':'50🪙';act=(g.mult[s]===2&&u.k==='double')||(g.mult[s]===3&&u.k==='triple')||(tgt&&tgt.p===u.k);}
   d.className='pu'+(used&&!act?' used':'')+(act?' act':'')+(!my?' off':'');d.innerHTML=`<span class="i">${u.i}</span>${u.n}<small>${cost}</small>`;d.onclick=()=>puTap(u.k);p.appendChild(d);});
- $('pinfo').textContent=`⚡ ${g.power[s]} free power-up${g.power[s]===1?'':'s'} left · 1 per move · 🪙 ${(g.coins[s]|0).toLocaleString()}`;}
+ $('pinfo').textContent=`Drop ${Math.min(2,(g.drops|0)+1)} of 2${g.mult[s]>1?' · ×'+g.mult[s]+' on both drops':''} · ⚡ ${g.power[s]} free power-up${g.power[s]===1?'':'s'} left · 1 per turn · 🪙 ${(g.coins[s]|0).toLocaleString()}`;}
 // ---------- input ----------
 function puTap(k){if(!isHumanTurn()||busy)return;const s=g.turn;
  if(k==='swap'){if(!L.canSwap(g)){toast('Need 50 coins for another swap');return;}doAct({t:'swap'});return;}
- if(g.used[s][k]){toast('Each power-up once per game');return;}if(g.puTurn){toast('One power-up per move');return;}
+ if(g.used[s][k]){toast('Each power-up once per game');return;}if(g.puTurn){toast('One power-up per turn');return;}if((k==='double'||k==='triple')&&g.drops){toast('Use Double/Triple before your 1st drop');return;}
  if(!L.canPower(g,k)){toast('No free power-ups left — need 50 coins');return;}
  if(k==='double'||k==='triple'){doAct({t:'boost',p:k});return;}
  if(!g.b.some(v=>v)){toast('Nothing to blast yet');return;}
@@ -77,14 +77,14 @@ function cellTap(i){if(!isHumanTurn()||busy)return;
 $('tgo').onclick=()=>{if(!tgt||tgt.c==null)return;const a={t:'blast',p:tgt.p,c:tgt.c};cancelTarget(true);doAct(a);};$('tno').onclick=()=>cancelTarget();
 // ---------- actions ----------
 async function animate(r,pre){if(!r)return;
- if(r.t==='boost'){SND.pu();toast((r.p==='double'?'✖2 Double':'✖3 Triple')+' — next drop scores ×'+(r.p==='double'?2:3));return;}
+ if(r.t==='boost'){SND.pu();toast((r.p==='double'?'✖2 Double':'✖3 Triple')+' — both drops this turn score ×'+(r.p==='double'?2:3));return;}
  if(r.t==='swap'){SND.pu();msg('⇄ New pieces!');return;}
  if(r.t==='blast'){SND.boom();r.cells.forEach(c=>{const e=svg.querySelector(`.cell[data-i="${c}"]`);e&&e.classList.add('tgt');});r.hit.forEach(c=>cellG(c).classList.add('vn'));await wait(320);svg.querySelectorAll('.cell.tgt').forEach(e=>e.classList.remove('tgt'));popAt(r.cells[0],'💥 '+r.hit.length+' cleared','#ff8a5c');return;}
  if(r.t==='drop'){drawVal(r.i,r.v,'dp');SND.drop();await wait(240);
   for(const st of r.steps){if(st.nova){st.cells.forEach(c=>cellG(c).classList.add('vn'));SND.nova();popAt(r.i,'🌟 SUPERNOVA +'+(st.pts*r.mult).toLocaleString(),'#fff');await wait(450);continue;}
    st.cells.forEach(c=>{if(c!==r.i)cellG(c).classList.add('vn');});await wait(220);st.cells.forEach(c=>{if(c!==r.i)drawVal(c,0);});drawVal(r.i,st.nv,'mg');SND.merge(st.combo);
    popAt(r.i,(st.combo>1?'COMBO ×'+st.combo+' ':'')+'+'+(st.pts*r.mult).toLocaleString()+(r.mult>1?' (×'+r.mult+')':''));await wait(360);}
-  if(!r.steps.length&&r.mult>1)toast('No merge — the ×'+r.mult+' boost is used up');}}
+  }}
 async function doAct(a,opts){opts=opts||{};if(!g||g.over)return false;const seat=g.turn;const r=L.apply(g,a);if(!r){toast('Not allowed');return false;}busy=true;sel=null;
  try{render();await animate(r);
   if(opts.snap){g=L.restore(opts.snap);}drawAll();
@@ -96,14 +96,14 @@ async function doAct(a,opts){opts=opts||{};if(!g||g.over)return false;const seat
  render();next();return true;}
 function next(){if(!g)return;if(g.over){finish();return;}
  const s=g.turn,online=S.mode==='online'||S.mode==='team-online';
- if(S.humans.includes(s)){const t=S.mode==='pvp'||S.mode==='team-pvp'?seatName(s)+' — your turn':g.N===4?'Your turn (team '+(L.side(g,s)?'blue':'pink')+')':'Your turn — pick a piece';msg(t);if(S.humans.length>1&&(S.mode==='pvp'||S.mode==='team-pvp'))toast(seatName(s)+'\'s turn',900);return;}
+ if(S.humans.includes(s)){if(g.drops>0){msg('Nice! Now place your 2nd piece');return;}const t=S.mode==='pvp'||S.mode==='team-pvp'?seatName(s)+' — your turn':g.N===4?'Your turn (team '+(L.side(g,s)?'blue':'pink')+')':'Your turn — place 2 pieces';msg(t);if(S.humans.length>1&&(S.mode==='pvp'||S.mode==='team-pvp'))toast(seatName(s)+'\'s turn',900);return;}
  if(S.cpu[s]&&(!online||Online.st.host)){msg(seatName(s)+' is thinking…');runCpu(s);return;}
  msg('Waiting for '+seatName(s)+'…');}
 let cpuRun=0;
 async function runCpu(s){const id=++cpuRun;await wait(550);if(id!==cpuRun||!g||g.over||g.turn!==s)return;
  const acts=L.aiTurn(g,S.cpu[s]);let dropped=false;for(const a of acts){if(!g||g.turn!==s||g.over)break;if(a.t==='boost')toast(seatName(s)+' used '+(a.p==='double'?'✖2 Double':'✖3 Triple')+'!');
   if(a.t==='drop'){dropped=true;const ok=await doActNoNext(a);if(!ok)dropped=false;}else await doActNoNext(a);await wait(150);}
- if(!dropped&&g&&!g.over&&g.turn===s){const em=L.empties(g);if(em.length)await doActNoNext({t:'drop',k:0,i:em[0]});}
+ let gd=0;while(g&&!g.over&&g.turn===s&&gd++<3){const em=L.empties(g);if(!em.length)break;await doActNoNext({t:'drop',k:0,i:em[0]});}
  render();next();}
 async function doActNoNext(a){const seat=g.turn;const r=L.apply(g,a);if(!r)return false;busy=true;try{render();await animate(r);drawAll();const online=S.mode==='online'||S.mode==='team-online';if(online)Online.cpuAct(a,L.serialize(g),seat);autosave();}finally{busy=false;}return true;}
 // ---------- start modes ----------
@@ -131,12 +131,12 @@ function startDaily(){const nm=needName();if(!nm)return;const sv=dailySave();if(
  // same pre-seeded board for everyone: a few starter hexes from the seed
  const G=L.geo(game.R);for(let n=0;n<6;n++){const i=Math.floor(game.rng()*G.C.length);if(!game.b[i]){const v=1+Math.floor(game.rng()*3);const t=game.b.slice();t[i]=v;if(L.resolve(game.R,t,i,v).steps.length===0)game.b[i]=v;}}
  begin(game,{mode:'daily',humans:[0],cpu:{},me:0,names:[nm],day:k,dailyN:dailyNum(k),practice,moves:[]});toast(practice?'🗓 Daily #'+dailyNum(k)+' · practice replay':'🗓 Daily #'+dailyNum(k)+' · same puzzle for everyone today!',2200);}
-const sq=s=>s<=0?'⬛':s<60?'🟦':s<120?'🟩':s<250?'🟨':s<500?'🟧':'🟥';
-function dailyText(r){return '⬢ Hex Merge Daily #'+dailyNum(r.day)+' — '+r.score.toLocaleString()+'\n'+r.moves.slice(0,8).map(sq).join('')+'\n'+r.moves.slice(8,15).map(sq).join('')+'\nBest move '+Math.max(0,...r.moves).toLocaleString()+'\nPlay today\'s puzzle: '+SITE+'?daily=1';}
+const sq=s=>s<=0?'⬛':s<100?'🟦':s<200?'🟩':s<400?'🟨':s<800?'🟧':'🟥';
+function dailyText(r){return '⬢ Hex Merge Daily #'+dailyNum(r.day)+' — '+r.score.toLocaleString()+'\n'+r.moves.slice(0,5).map(sq).join('')+'\n'+r.moves.slice(5,10).map(sq).join('')+'\nBest turn '+Math.max(0,...r.moves).toLocaleString()+'\nPlay today\'s puzzle: '+SITE+'?daily=1';}
 // ---------- missions ----------
 function misState(){return Missions.ensure(LS('hexmerge.missions',null));}
-function trackMove(r,seat){const ms=misState();const done=Missions.track(ms,{type:'move',score:r.pts,merges:r.steps.filter(x=>!x.nova).length,combo:r.steps.length,maxV:Math.max(0,...r.steps.map(x=>x.nv||0))});SS('hexmerge.missions',ms);
- if(S.mode==='daily')S.moves.push(r.pts);done.forEach(m=>toast('🎯 Mission done: '+m.txt+' (+'+m.coins+' 🪙 to claim)',2200));
+function trackMove(r,seat){const ms=misState();const done=Missions.track(ms,{type:'move',score:r.turnEnd?r.turnPts:0,merges:r.steps.filter(x=>!x.nova).length,combo:r.steps.length,maxV:Math.max(0,...r.steps.map(x=>x.nv||0))});SS('hexmerge.missions',ms);
+ if(S.mode==='daily'&&r.turnEnd)S.moves.push(r.turnPts);done.forEach(m=>toast('🎯 Mission done: '+m.txt+' (+'+m.coins+' 🪙 to claim)',2200));
  if(r.steps.length>=4)unlock('combo4');if(r.steps.some(x=>x.nv>=8))unlock('make8');if(r.steps.some(x=>x.nova))unlock('nova');if(r.pts>=500)unlock('move500');}
 function openMissions(){const ms=misState();SS('hexmerge.missions',ms);const L2=Missions.list(ms);
  $('mislist').innerHTML=L2.map(m=>`<div class="mis${m.claimed?' done':''}"><div class="t">${m.txt}<br><small>${m.have}/${m.goal} · +${m.coins} 🪙</small></div>${m.claimed?'✓':m.done?`<button class="btn" data-c="${m.id}">Claim</button>`:''}</div>`).join('')+

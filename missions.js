@@ -2,14 +2,14 @@
 (function(root){
 const POOL=[
  {id:'win1',txt:'Win 1 game',goal:1,coins:30,k:'wins'},
- {id:'move200',txt:'Score 200+ in one move',goal:1,coins:20,k:'bigMove'},
+ {id:'turn300',txt:'Score 300+ in one turn',goal:1,coins:20,k:'bigMove'},
  {id:'merge10',txt:'Make 10 merges',goal:10,coins:20,k:'merges'},
  {id:'combo3',txt:'Get a ×3 combo chain',goal:1,coins:25,k:'combo3'},
  {id:'play3',txt:'Play 3 games',goal:3,coins:20,k:'games'},
  {id:'make6',txt:'Create a 6 hex',goal:1,coins:20,k:'make6'},
  {id:'winOn',txt:'Win an online game',goal:1,coins:40,k:'onlineWins'},
  {id:'merge25',txt:'Make 25 merges',goal:25,coins:30,k:'merges'},
- {id:'move100x3',txt:'Score 100+ in a move 3 times',goal:3,coins:25,k:'hMoves'},
+ {id:'turn150x3',txt:'Score 150+ in a turn 3 times',goal:3,coins:25,k:'hMoves'},
  {id:'daily1',txt:'Play the Daily Puzzle',goal:1,coins:15,k:'daily'}];
 const ALLBONUS=25,STREAK_STEP=10,STREAK_CAP=50;
 function dayKey(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -24,7 +24,7 @@ function list(s){return pick(s.day).map(m=>({...m,have:Math.min(m.goal,s.c[m.k]|
 function streakBonus(s){return Math.min(STREAK_CAP,STREAK_STEP*(s.streak||1));}
 // events: {type:'move',score,merges,combo,maxV} | {type:'game',won,online,daily}
 function track(s,ev){const before=list(s).filter(m=>m.done).map(m=>m.id),c=s.c,add=(k,n)=>{if(n>0)c[k]=(c[k]||0)+n;};
- if(ev.type==='move'){add('merges',ev.merges|0);if(ev.score>=200)add('bigMove',1);if(ev.score>=100)add('hMoves',1);if(ev.combo>=3)add('combo3',1);if(ev.maxV>=6)add('make6',1);}
+ if(ev.type==='move'){add('merges',ev.merges|0);if(ev.score>=300)add('bigMove',1);if(ev.score>=150)add('hMoves',1);if(ev.combo>=3)add('combo3',1);if(ev.maxV>=6)add('make6',1);}
  if(ev.type==='game'){add('games',1);if(ev.daily)add('daily',1);if(ev.won){add('wins',1);if(ev.online)add('onlineWins',1);}}
  return list(s).filter(m=>m.done&&!before.includes(m.id));}
 function claim(s,id){let n=0;const L=list(s);
