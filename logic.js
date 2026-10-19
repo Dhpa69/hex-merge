@@ -12,7 +12,7 @@ function attachRng(g){const base=mulberry(g.seed);for(let i=0;i<(g.rc|0);i++)bas
 function draw(g){const x=g.rng();return x<.45?1:x<.8?2:x<.97?3:4;}
 function side(g,s){return g.N===4?s%2:s;}
 function newGame(o){o=o||{};const N=o.N||2,R=o.R||(N===4?4:3);const G=geo(R);
- const g={v:1,mode:o.mode||'ai',N,R,turns:o.turns||(N===4?8:10),drops:0,tp:0,seed:(o.seed>>>0)||((Math.random()*4294967295)>>>0),rc:0,b:Array(G.C.length).fill(0),
+ const g={v:1,mode:o.mode||'ai',N,R,turns:o.turns||10,drops:0,tp:0,seed:(o.seed>>>0)||((Math.random()*4294967295)>>>0),rc:0,b:Array(G.C.length).fill(0),
   trays:[],sc:[0,0],pts:Array(N).fill(0),done:Array(N).fill(0),turn:0,mult:Array(N).fill(1),power:Array(N).fill(FREE_POWER),swaps:Array(N).fill(FREE_SWAP),
   coins:(o.coins||[]).slice(0,N),used:Array.from({length:N},()=>({})),puTurn:false,over:false,winner:null,moveN:0,stats:Array.from({length:N},()=>({merges:0,best:0,combo:0,maxV:0,hexes:0}))};
  while(g.coins.length<N)g.coins.push(START_COINS);attachRng(g);for(let s=0;s<N;s++)g.trays.push([draw(g),draw(g),draw(g)]);return g;}
