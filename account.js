@@ -31,7 +31,7 @@ async function onUser(u){user=u;ui();if(!u)return;try{st('Syncing…');const row
   else if(!localStorage.getItem(mk)){const m=merge(row.data||{},snapLocal());applyData(m);localStorage.setItem(mk,'1');await push();toast('✓ Signed in — guest progress merged');}
   else{applyData(row.data);st('✓ Synced');}}catch(e){st('Could not sync: '+(e.message||e));}}
 function ui(){const t=$('tAcct');if(t)t.style.display=ready?'':'none';if(!ready)return;$('acState').textContent=user?'Signed in'+(user.email?' as '+user.email:'')+'.':'Playing as guest.';
- $('acApple').style.display=user?'none':'';$('acOut').style.display=user?'':'none';}
+ $('acApple').style.display=user?'none':'';$('acOut').style.display=user?'':'none';$('acDel').style.display=user?'':'none';}
 async function check(){if(!sb)return;try{const s=await fetch(SB_URL+'/auth/v1/settings',{headers:{apikey:SB_KEY}}).then(r=>r.json());if(!s||!s.external||!s.external.apple)return;
   const r=await fetch(SB_URL+'/rest/v1/'+T+'?select=id&limit=1',{headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY}});if(r.status===404)return; // table not created yet
   ready=true;ui();}catch(e){}}
@@ -40,6 +40,11 @@ if(sb){sb.auth.onAuthStateChange((ev,ses)=>{const u=ses&&ses.user||null;if((u&&u
 $('tAcct').onclick=()=>{ui();ov('acctov');};
 $('acApple').onclick=async()=>{if(!sb)return;st('Opening Apple…');const {error}=await sb.auth.signInWithOAuth({provider:'apple',options:{redirectTo:REDIRECT}});if(error)st('Sign-in failed: '+error.message);};
 $('acOut').onclick=async()=>{await push();await sb.auth.signOut();user=null;ui();st('Signed out — this device keeps playing as a guest.');};
-window.Account={get ready(){return ready;},get user(){return user;},get sb(){return sb;},merge,push};
+async function deleteAccount(){if(!user||!sb)return;if(!confirm('Delete your Hex Merge account? Your cloud profile and sign-in are permanently removed. Progress on this device stays as a guest.'))return;
+ st('Deleting…');try{const {data,error}=await sb.rpc('hexmerge_delete_my_account');if(error)throw error;localStorage.removeItem('hexmerge.merged.'+user.id);try{await sb.auth.signOut();}catch(e){}user=null;ui();
+  st(data==='profile_deleted'?'✓ Hex Merge data deleted (your Star Tiles account is kept).':'✓ Account deleted. You are playing as a guest.');toast('Account deleted');}
+ catch(e){st('Could not delete: '+(e.message||e)+' — email dhaval83@icloud.com and we will delete it for you.');}}
+$('acDel').onclick=deleteAccount;
+window.Account={deleteAccount,get ready(){return ready;},get user(){return user;},get sb(){return sb;},merge,push};
 check();
 })();

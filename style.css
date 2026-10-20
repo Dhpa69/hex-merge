@@ -128,3 +128,5 @@ body.fx-firework .mg{animation:fxfire .7s ease-out}@keyframes fxfire{0%{filter:d
 @keyframes lgin{from{transform:translate(-50%,-30px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
 .apple{display:block;width:100%;margin:8px 0;padding:12px;border-radius:12px;border:0;background:#000;color:#fff;font-weight:800;font-size:16px;font-family:inherit}
 #ovX .btn{width:auto;margin:6px auto 0;display:inline-block;padding:8px 14px}
+
+.legal{font-size:12px;margin-top:8px}.legal a,#acctov a{color:#8fb4ff}.btn.danger{background:linear-gradient(#ff5a6e,#c81e3a)!important}

@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#070a1f">
-<title>Hex Merge</title><link rel="stylesheet" href="style.css?v=10"></head><body><div id="app"><canvas id="stars"></canvas>
+<title>Hex Merge</title><link rel="stylesheet" href="style.css?v=10.1"></head><body><div id="app"><canvas id="stars"></canvas>
 <!-- HOME -->
 <div class="scr on" id="home"><div class="hcard">
  <div class="coins">🪙 <span id="coinN">0</span></div>
@@ -22,7 +22,7 @@
   <button class="htile" id="tTeam"><i>👥</i><span>Team 2v2</span></button><button class="htile" id="tShare"><i>📣</i><span>Share</span></button>
   <button class="htile" id="tShop"><i>🛍</i><span>Shop</span></button><button class="htile" id="tChest"><i>🎁</i><span>Chest</span></button><button class="htile" id="tAcct" style="display:none"><i>👤</i><span>Account</span></button>
   <button class="htile" id="tHow"><i>❓</i><span>How to</span></button><button class="htile" id="tMore"><i>⚙️</i><span>More</span></button></div>
- <div class="hmore" id="more"><button class="btn mute" id="muteBtn">🔊 Sound: ON</button><button class="btn mute" id="chatOffBtn">💬 Chat: ON</button><button class="btn mute" id="rkBtn"></button></div>
+ <div class="hmore" id="more"><button class="btn mute" id="muteBtn">🔊 Sound: ON</button><button class="btn mute" id="chatOffBtn">💬 Chat: ON</button><button class="btn mute" id="rkBtn"></button><div class="legal"><a href="privacy.html">Privacy policy</a> · <a href="support.html">Support</a></div></div>
  <div id="ver">v6</div>
 </div></div>
 <!-- GAME -->
@@ -56,7 +56,7 @@
 <div class="ov" id="shopov"><div class="card"><div class="chhead"><b>🛍 Shop</b><span id="shopCoins"></span><button class="btn" onclick="ov('shopov',false)">✕</button></div><div id="shopList"></div><small class="small">Cosmetics are just for looks — they never change the game.</small></div></div>
 <div class="ov" id="chestov"><div class="card"><div class="chhead"><b>🎁 Chests</b><button class="btn" onclick="ov('chestov',false)">✕</button></div><div id="chestBody"></div></div></div>
 <div class="ov" id="lvlov"><div class="card"><h2>⬆ Level up!</h2><div id="lvlBody"></div><button class="btn big" onclick="ov('lvlov',false)">Awesome!</button></div></div>
-<div class="ov" id="acctov"><div class="card"><div class="chhead"><b>👤 Account</b><button class="btn" onclick="ov('acctov',false)">✕</button></div><p id="acState"></p><button class="apple" id="acApple"> Sign in with Apple</button><button class="btn" id="acOut" style="display:none">Sign out</button><small class="small" id="acStatus"></small><small class="small">Signing in saves your coins, skins, XP and stats so they follow you to other devices. Guest play always works.</small></div></div>
+<div class="ov" id="acctov"><div class="card"><div class="chhead"><b>👤 Account</b><button class="btn" onclick="ov('acctov',false)">✕</button></div><p id="acState"></p><button class="apple" id="acApple"> Sign in with Apple</button><button class="btn" id="acOut" style="display:none">Sign out</button><button class="btn danger" id="acDel" style="display:none">Delete account</button><small class="small" id="acStatus"></small><small class="small">Signing in saves your coins, skins, XP and stats so they follow you to other devices. Guest play always works.</small><small class="small"><a href="privacy.html">Privacy policy</a> · <a href="support.html">Support</a></small></div></div>
 <div class="ov" id="missions"><div class="card"><div class="chhead"><b>🎯 Daily missions</b><button class="btn" id="misClose">✕</button></div><div id="mislist"></div></div></div>
 <div class="ov" id="lb"><div class="card"><div class="chhead"><b>🏆 Ranks</b><button class="btn" id="lbClose">✕</button></div>
  <div class="lbtabs"><button data-t="week" class="on">This week</button><button data-t="daily">Daily</button><button data-t="mine">My bests</button><button data-t="ach">Badges</button></div><div id="rkInfo"></div><div id="lbList"></div></div></div>
@@ -77,5 +77,5 @@
  <p>10 turns each or until the board fills. Higher score wins!</p></div></div></div>
 <div class="toast" id="toast"></div>
 </div>
-<script src="mq.js?v=10"></script><script src="logic.js?v=10"></script><script src="missions.js?v=10"></script><script src="online.js?v=10"></script><script src="vendor/supabase.js?v=10"></script><script src="app.js?v=10"></script><script src="meta.js?v=10"></script><script src="account.js?v=10"></script>
+<script src="mq.js?v=10.1"></script><script src="logic.js?v=10.1"></script><script src="missions.js?v=10.1"></script><script src="online.js?v=10.1"></script><script src="vendor/supabase.js?v=10.1"></script><script src="app.js?v=10.1"></script><script src="meta.js?v=10.1"></script><script src="account.js?v=10.1"></script>
 </body></html>
