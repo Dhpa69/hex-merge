@@ -10,12 +10,16 @@ function geo(R){if(GEO[R])return GEO[R];const C=[],IDX={};for(let q=-R;q<=R;q++)
 function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function attachRng(g){const base=mulberry(g.seed);for(let i=0;i<(g.rc|0);i++)base();Object.defineProperty(g,'rng',{value:()=>{g.rc=(g.rc|0)+1;return base();},enumerable:false,configurable:true,writable:true});return g;}
 function draw(g){const x=g.rng();return x<.45?1:x<.8?2:x<.97?3:4;}
+// v6: a tray never holds 3 identical pieces
+function fillTray(g,t,n){while(t.length<n){let v=draw(g),k=0;while(t.length===2&&t[0]===t[1]&&v===t[0]&&k++<20)v=draw(g);if(t.length===2&&t[0]===t[1]&&v===t[0])v=t[0]%4+1;t.push(v);}return t;}
+// v6: every game starts with 2 random pieces (from the seed, so online players match), never adjacent so nothing merges
+function seedStart(g){const G=geo(g.R),n=G.C.length;let a=Math.floor(g.rng()*n),b,k=0;do{b=Math.floor(g.rng()*n);}while((b===a||G.NB[a].includes(b))&&k++<50);g.b[a]=1+Math.floor(g.rng()*3);g.b[b]=1+Math.floor(g.rng()*3);}
 function side(g,s){return g.N===4?s%2:s;}
 function newGame(o){o=o||{};const N=o.N||2,R=o.R||(N===4?4:3);const G=geo(R);
  const g={v:1,mode:o.mode||'ai',N,R,turns:o.turns||10,drops:0,tp:0,seed:(o.seed>>>0)||((Math.random()*4294967295)>>>0),rc:0,b:Array(G.C.length).fill(0),
   trays:[],sc:[0,0],pts:Array(N).fill(0),done:Array(N).fill(0),turn:0,mult:Array(N).fill(1),power:Array(N).fill(FREE_POWER),swaps:Array(N).fill(FREE_SWAP),
   coins:(o.coins||[]).slice(0,N),used:Array.from({length:N},()=>({})),puTurn:false,over:false,winner:null,moveN:0,stats:Array.from({length:N},()=>({merges:0,best:0,combo:0,maxV:0,hexes:0}))};
- while(g.coins.length<N)g.coins.push(START_COINS);attachRng(g);for(let s=0;s<N;s++)g.trays.push([draw(g),draw(g),draw(g)]);return g;}
+ while(g.coins.length<N)g.coins.push(START_COINS);attachRng(g);seedStart(g);for(let s=0;s<N;s++)g.trays.push(fillTray(g,[],3));return g;}
 function serialize(g){return JSON.parse(JSON.stringify(g));}
 function restore(o){return attachRng(JSON.parse(JSON.stringify(o)));}
 function group(b,NB,i){const v=b[i],seen=new Set([i]),st=[i];while(st.length){const c=st.pop();for(const n of NB[c])if(!seen.has(n)&&b[n]===v){seen.add(n);st.push(n);}}return[...seen];}
@@ -36,13 +40,13 @@ function finishCheck(g){const full=!g.b.includes(0);if(full||g.done.every(d=>d>=
 function apply(g,a){if(g.over||!a)return null;const s=g.turn;
  if(a.t==='boost'){if(a.p!=='double'&&a.p!=='triple'||!canPower(g,a.p)||g.drops)return null;spend(g);g.used[s][a.p]=1;g.puTurn=true;g.mult[s]=a.p==='double'?2:3;g.moveN++;return{t:'boost',p:a.p};}
  if(a.t==='blast'){if(a.p!=='bomb'&&a.p!=='cross'||!canPower(g,a.p)||!(a.c>=0&&a.c<g.b.length))return null;const cells=blastCells(g,a.p,a.c);spend(g);g.used[s][a.p]=1;g.puTurn=true;const hit=cells.filter(c=>g.b[c]);hit.forEach(c=>g.b[c]=0);g.moveN++;return{t:'blast',p:a.p,cells,hit};}
- if(a.t==='swap'){if(!canSwap(g))return null;if(g.swaps[s]>0)g.swaps[s]--;else g.coins[s]-=EXTRA_COST;const n=g.trays[s].length;g.trays[s]=[];for(let k=0;k<n;k++)g.trays[s].push(draw(g));g.swTurn=true;g.moveN++;return{t:'swap',n};}
+ if(a.t==='swap'){if(!canSwap(g))return null;if(g.swaps[s]>0)g.swaps[s]--;else g.coins[s]-=EXTRA_COST;const n=g.trays[s].length;g.trays[s]=fillTray(g,[],n);g.swTurn=true;g.moveN++;return{t:'swap',n};}
  if(a.t==='drop'){const v=g.trays[s][a.k];if(!v||!(a.i>=0&&a.i<g.b.length)||g.b[a.i])return null;const r=resolve(g.R,g.b,a.i,v);const m=g.mult[s];const pts=r.pts*m;
   g.b=r.b;g.sc[side(g,s)]+=pts;g.pts[s]+=pts;g.trays[s].splice(a.k,1);g.drops=(g.drops|0)+1;g.tp=(g.tp|0)+pts;
   const st=g.stats[s];st.merges+=r.steps.filter(x=>!x.nova).length;st.best=Math.max(st.best,pts);st.combo=Math.max(st.combo,r.steps.length);st.hexes+=r.steps.reduce((n,x)=>n+x.cells.length,0);r.steps.forEach(x=>{if(x.nv)st.maxV=Math.max(st.maxV,x.nv);});
   g.moveN++;g.last={seat:s,i:a.i,v,pts,mult:m,steps:r.steps};const turnPts=g.tp,dropN=g.drops;
   const end=g.drops>=DROPS||!g.trays[s].length||!g.b.includes(0);
-  if(end){g.mult[s]=1;while(g.trays[s].length<3)g.trays[s].push(draw(g));g.done[s]++;g.puTurn=false;g.swTurn=false;g.drops=0;g.tp=0;
+  if(end){g.mult[s]=1;fillTray(g,g.trays[s],3);g.done[s]++;g.puTurn=false;g.swTurn=false;g.drops=0;g.tp=0;
    let n=s;for(let k=0;k<g.N;k++){n=(n+1)%g.N;if(g.done[n]<g.turns)break;}g.turn=n;}
   finishCheck(g);return{t:'drop',v,i:a.i,pts,mult:m,steps:r.steps,seat:s,dropN,turnEnd:end,turnPts};}
  return null;}
