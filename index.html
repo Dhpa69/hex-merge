@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#070a1f">
-<title>Hex Merge</title><link rel="stylesheet" href="style.css?v=9"></head><body><div id="app"><canvas id="stars"></canvas>
+<title>Hex Merge</title><link rel="stylesheet" href="style.css?v=10"></head><body><div id="app"><canvas id="stars"></canvas>
 <!-- HOME -->
 <div class="scr on" id="home"><div class="hcard">
  <div class="coins">🪙 <span id="coinN">0</span></div>
@@ -9,6 +9,7 @@
  <button class="btn big resume" id="onlResume" style="display:none">🌐 Continue online game</button>
  <button class="btn big resume" id="resumeBtn" style="display:none">▶ Resume game</button>
  <label class="pname">Your name <input id="pname" maxlength="14" placeholder="Enter your name" autocomplete="off"></label>
+ <div class="lvl" id="lvlLine"></div>
  <div class="hstat"><span id="pstat"></span><span id="wsBadge"></span></div>
  <div class="diff" id="diff"><button data-d="easy">EASY</button><button data-d="medium">MEDIUM</button><button data-d="hard">HARD</button><button data-d="expert">EXPERT</button><button data-d="master" class="master">👑 MASTER</button></div>
  <button class="btn big" id="vsAI">Play vs COMPUTER</button>
@@ -19,6 +20,7 @@
  <div class="htiles">
   <button class="htile" id="tMis"><i>🎯</i><span>Missions</span></button><button class="htile" id="tLb"><i>🏆</i><span>Ranks</span></button>
   <button class="htile" id="tTeam"><i>👥</i><span>Team 2v2</span></button><button class="htile" id="tShare"><i>📣</i><span>Share</span></button>
+  <button class="htile" id="tShop"><i>🛍</i><span>Shop</span></button><button class="htile" id="tChest"><i>🎁</i><span>Chest</span></button><button class="htile" id="tAcct" style="display:none"><i>👤</i><span>Account</span></button>
   <button class="htile" id="tHow"><i>❓</i><span>How to</span></button><button class="htile" id="tMore"><i>⚙️</i><span>More</span></button></div>
  <div class="hmore" id="more"><button class="btn mute" id="muteBtn">🔊 Sound: ON</button><button class="btn mute" id="chatOffBtn">💬 Chat: ON</button><button class="btn mute" id="rkBtn"></button></div>
  <div id="ver">v6</div>
@@ -34,7 +36,7 @@
  <div id="bwrap"><svg id="board"></svg></div>
  <div id="tbar"><span id="tmsg">Tap a target hex</span><button class="btn" id="tgo" disabled>BLAST!</button><button class="btn gry" id="tno">Cancel</button></div>
  <div id="tray"></div>
- <div id="pups"><button class="btn" id="power">⚡<span id="badge">2</span><small>POWER</small></button><div id="pcoins">YOUR COINS<b>🪙 <span id="coinN">100</span></b></div><button class="btn" id="swapB">⇄<small>SWAP</small><span id="swapc" class="cost">FREE</span></button></div>
+ <div id="pups"><button class="btn" id="power">⚡<span id="badge">2</span><small>POWER</small></button><button class="btn" id="undoB" style="display:none">↶<small>UNDO</small><span id="undoc" class="cost">30🪙</span></button><div id="pcoins">YOUR COINS<b>🪙 <span id="gCoinN">100</span></b></div><button class="btn" id="swapB">⇄<small>SWAP</small><span id="swapc" class="cost">FREE</span></button></div>
  <div id="pmenu"><div class="pcard"><div class="ptitle">⚡ POWER-UPS <span id="pleft"></span></div>
  <button class="pbig" data-p="double">✖2 DOUBLE POINTS<small>×2 on all 3 pieces this turn · once per game</small></button><button class="pbig" data-p="unboost" id="unboost">↩ CANCEL DOUBLE<small>Refunds it (only before your 1st drop)</small></button>
  <button class="pbig" data-p="bomb">💣 BOMB<small>Clears a hex + its 6 neighbors · once per game</small></button>
@@ -51,6 +53,10 @@
 <div class="ov" id="chat"><div class="card chcard"><div class="chhead"><b>💬 Chat</b><button class="btn" id="chClose">✕</button></div><div id="chlist"></div>
  <div class="chemo"><button>👍</button><button>😂</button><button>😮</button><button>🔥</button><button>😭</button><button>🎉</button><button>👏</button><button>😡</button></div>
  <div class="chrow"><input id="chText" maxlength="200" placeholder="Message…" autocomplete="off"><button class="btn" id="chSend">Send</button></div></div></div>
+<div class="ov" id="shopov"><div class="card"><div class="chhead"><b>🛍 Shop</b><span id="shopCoins"></span><button class="btn" onclick="ov('shopov',false)">✕</button></div><div id="shopList"></div><small class="small">Cosmetics are just for looks — they never change the game.</small></div></div>
+<div class="ov" id="chestov"><div class="card"><div class="chhead"><b>🎁 Chests</b><button class="btn" onclick="ov('chestov',false)">✕</button></div><div id="chestBody"></div></div></div>
+<div class="ov" id="lvlov"><div class="card"><h2>⬆ Level up!</h2><div id="lvlBody"></div><button class="btn big" onclick="ov('lvlov',false)">Awesome!</button></div></div>
+<div class="ov" id="acctov"><div class="card"><div class="chhead"><b>👤 Account</b><button class="btn" onclick="ov('acctov',false)">✕</button></div><p id="acState"></p><button class="apple" id="acApple"> Sign in with Apple</button><button class="btn" id="acOut" style="display:none">Sign out</button><small class="small" id="acStatus"></small><small class="small">Signing in saves your coins, skins, XP and stats so they follow you to other devices. Guest play always works.</small></div></div>
 <div class="ov" id="missions"><div class="card"><div class="chhead"><b>🎯 Daily missions</b><button class="btn" id="misClose">✕</button></div><div id="mislist"></div></div></div>
 <div class="ov" id="lb"><div class="card"><div class="chhead"><b>🏆 Ranks</b><button class="btn" id="lbClose">✕</button></div>
  <div class="lbtabs"><button data-t="week" class="on">This week</button><button data-t="daily">Daily</button><button data-t="mine">My bests</button><button data-t="ach">Badges</button></div><div id="rkInfo"></div><div id="lbList"></div></div></div>
@@ -61,6 +67,7 @@
 <div class="ov" id="howto"><div class="card"><div class="chhead"><b>❓ How to play</b><button class="btn" id="howClose">✕</button></div><div class="rules">
  <p><b>Your turn:</b> place ALL 3 of your tray pieces, in any order — tap a piece, then tap an empty hex. Merges happen after each drop. Once all 3 are placed your tray refills and the turn passes. Your tray never has 3 identical pieces. The game ends after everyone's 10 turns, or as soon as the board is full.</p>
  <p><b>🎲 Who goes first</b> is random each game. <b>🔥 Final 3 turns:</b> your tray starts offering big 4s and 5s, more often as the end nears.</p>
+ <p><b>🪙 Coins &amp; extras:</b> every finished game pays coins (+3, +1 per 100 points, +15 for the Daily Puzzle) and XP — level up for rewards and level-only skins. Open a free 🎁 chest every 4 hours (or buy one for 150). The 🛍 Shop has hex skins, board themes, merge effects and power-ups to keep in your bag. Badges and missions pay coins automatically. Against the computer you can ↶ undo your last drop for 30 coins, once per turn.</p>
  <p><b>★ Wild piece</b> (rare rainbow hex, at most 1 per tray): when placed it turns into whichever neighbor number gives the best merge. With no neighbors it becomes a 1.</p>
  <p><b>Merge:</b> when 3 or more hexes with the same number touch, they merge into ONE hex of the next number, right where you dropped (three 2s → a 3).</p>
  <p><b>Score:</b> number × 10 × hexes merged. If the new hex makes another group of 3+, it merges again: the 2nd merge scores ×2, the 3rd ×3 (combo!).</p>
@@ -70,5 +77,5 @@
  <p>10 turns each or until the board fills. Higher score wins!</p></div></div></div>
 <div class="toast" id="toast"></div>
 </div>
-<script src="mq.js?v=9"></script><script src="logic.js?v=9"></script><script src="missions.js?v=9"></script><script src="online.js?v=9"></script><script src="vendor/supabase.js?v=9"></script><script src="app.js?v=9"></script>
+<script src="mq.js?v=10"></script><script src="logic.js?v=10"></script><script src="missions.js?v=10"></script><script src="online.js?v=10"></script><script src="vendor/supabase.js?v=10"></script><script src="app.js?v=10"></script><script src="meta.js?v=10"></script><script src="account.js?v=10"></script>
 </body></html>

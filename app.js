@@ -1,6 +1,6 @@
 'use strict';
 // Hex Merge v2 app: modes, UI, coins, missions, streaks, achievements, ranks, leaderboard, daily, online, team, share.
-const VER='v9',SITE='https://dhpa69.github.io/hex-merge/';
+const VER='v10',SITE='https://dhpa69.github.io/hex-merge/';
 const L=HexL,$=id=>document.getElementById(id);
 const COLORS=['','#3fd8ff','#4dff9a','#ffe14d','#ff9f40','#ff4f6d','#d45cff','#6f7bff','#ffffff','#ffd700'];
 const LS=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v;}catch(e){return d;}},SS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
@@ -59,7 +59,7 @@ function renderTray(){const t=$('tray');t.innerHTML='';const vs=viewSeat();const
   d.innerHTML=`<svg viewBox="-32 -32 64 64" width="56" height="56" style="overflow:visible">${hexPiece(v,26)}</svg>`;d.onclick=()=>{if(!isHumanTurn()||busy||vs!==g.turn)return;cancelTarget(true);sel=k;SND.tap();renderTray();msg('Tap an empty hex');};t.appendChild(d);});}
 function renderPU(){const s=viewSeat(),my=isHumanTurn()&&s===g.turn,m=g.mult[s]>1;
  $('badge').textContent=m?'x'+g.mult[s]:g.power[s]>0?g.power[s]:'50🪙';$('power').classList.toggle('on',m||!!tgt);$('power').disabled=!my;
- $('coinN').textContent=(g.coins[s]|0).toLocaleString();$('swapB').disabled=!my||!!g.swTurn;$('swapB').classList.toggle('arm',!!swapArm);
+ $('gCoinN').textContent=(g.coins[s]|0).toLocaleString();$('swapB').disabled=!my||!!g.swTurn;$('swapB').classList.toggle('arm',!!swapArm);
  $('swapc').textContent=g.swTurn?'USED':g.swaps[s]>0?'FREE':swapArm?'TAP AGAIN':'50🪙';
  $('pinfo').textContent=`Piece ${Math.min(3,(g.drops|0)+1)} of 3 · ${g.trays[s].length} left this turn${m?' · ⚡ ×2 on all 3 pieces':''}`;}
 // ---------- input ----------
@@ -69,19 +69,19 @@ function puTap(k){if(!isHumanTurn()||busy)return;const s=g.turn;
   swapArm=false;doAct({t:'swap'});return;}
  swapArm=false;
  if(g.used[s][k]){toast('Already used this game – each power-up once');return;}if(g.puTurn){toast('One power-up per turn');return;}if(k==='double'&&g.drops){toast('Use Double before your 1st drop');return;}
- if(!L.canPower(g,k)){toast('No free power-ups left — need 50 coins');return;}
- if(k==='double'){doAct({t:'boost',p:k});return;}
+ const useStock=g.power[s]<=0&&Meta.has(k)&&L.canStock(g,k);if(!useStock&&!L.canPower(g,k)){toast('No free power-ups left — need 50 coins');return;}
+ if(k==='double'){doAct(useStock?{t:'boost',p:k,stock:1}:{t:'boost',p:k});return;}
  if(!g.b.some(v=>v)){toast('Nothing to blast yet');return;}
- sel=null;tgt={p:k,c:null};$('tbar').classList.add('on');$('tmsg').textContent=(k==='bomb'?'💣 Bomb: ':'✚ Cross Blast: ')+'tap a target hex';$('tgo').disabled=true;renderTray();renderPU();}
+ sel=null;tgt={p:k,c:null,stock:useStock?1:0};$('tbar').classList.add('on');$('tmsg').textContent=(k==='bomb'?'💣 Bomb: ':'✚ Cross Blast: ')+'tap a target hex';$('tgo').disabled=true;renderTray();renderPU();}
 function cancelTarget(silent){if(!tgt)return;tgt=null;$('tbar').classList.remove('on');svg.querySelectorAll('.cell.tgt').forEach(e=>e.classList.remove('tgt'));if(!silent)renderPU();}
 function cellTap(i){if(!isHumanTurn()||busy)return;
  if(tgt){tgt.c=i;svg.querySelectorAll('.cell.tgt').forEach(e=>e.classList.remove('tgt'));L.blastCells(g,tgt.p,i).forEach(c=>svg.querySelector(`.cell[data-i="${c}"]`).classList.add('tgt'));$('tgo').disabled=false;$('tmsg').textContent='Tap BLAST! to clear the red hexes';return;}
  if(sel===null){msg('Pick a piece from your tray first');return;}if(g.b[i]){msg('That spot is taken');return;}
  const k=sel;sel=null;doAct({t:'drop',k,i});}
-$('tgo').onclick=()=>{if(!tgt||tgt.c==null)return;const a={t:'blast',p:tgt.p,c:tgt.c};cancelTarget(true);doAct(a);};$('tno').onclick=()=>cancelTarget();
+$('tgo').onclick=()=>{if(!tgt||tgt.c==null)return;const a={t:'blast',p:tgt.p,c:tgt.c};if(tgt.stock)a.stock=1;cancelTarget(true);doAct(a);};$('tno').onclick=()=>cancelTarget();
 // ---------- actions ----------
 async function animate(r,pre){if(!r)return;
- if(r.t==='boost'){SND.pu();toast('⚡ x2 this turn! All 3 pieces score double');return;}if(r.t==='unboost'){toast('⚡ Double cancelled (refunded)');return;}
+ if(r.t==='boost'){SND.pu();toast('⚡ x2 this turn! All 3 pieces score double');return;}if(r.t==='unboost'){if(r.paid==='stock'&&g.turn===S.me)Meta.give('double',1);toast('⚡ Double cancelled (refunded)');return;}
  if(r.t==='swap'){SND.pu();msg('⇄ New pieces!'+(g.drops?' '+g.trays[g.turn].length+' left to place':''));return;}
  if(r.t==='blast'){SND.boom();r.cells.forEach(c=>{const e=svg.querySelector(`.cell[data-i="${c}"]`);e&&e.classList.add('tgt');});r.hit.forEach(c=>cellG(c).classList.add('vn'));await wait(320);svg.querySelectorAll('.cell.tgt').forEach(e=>e.classList.remove('tgt'));popAt(r.cells[0],'💥 '+r.hit.length+' cleared','#ff8a5c');return;}
  if(r.t==='drop'){drawVal(r.i,r.v,'dp');SND.drop();await wait(240);if(r.wild){drawVal(r.i,r.wild,'mg');popAt(r.i,'★ Wild → '+r.wild,'#ffe14d');await wait(320);}
@@ -140,7 +140,7 @@ function dailyText(r){return '⬢ Hex Merge Daily #'+dailyNum(r.day)+' — '+r.s
 // ---------- missions ----------
 function misState(){return Missions.ensure(LS('hexmerge.missions',null));}
 function trackMove(r,seat){const ms=misState();const done=Missions.track(ms,{type:'move',score:r.turnEnd?r.turnPts:0,merges:r.steps.filter(x=>!x.nova).length,combo:r.steps.length,maxV:Math.max(0,...r.steps.map(x=>x.nv||0))});SS('hexmerge.missions',ms);
- if(S.mode==='daily'&&r.turnEnd)S.moves.push(r.turnPts);done.forEach(m=>toast('🎯 Mission done: '+m.txt+' (+'+m.coins+' 🪙 to claim)',2200));
+ if(S.mode==='daily'&&r.turnEnd)S.moves.push(r.turnPts);if(done.length)Meta.autoClaim();
  if(r.steps.length>=4)unlock('combo4');if(r.steps.some(x=>x.nv>=8))unlock('make8');if(r.steps.some(x=>x.nova))unlock('nova');if(r.pts>=500)unlock('move500');}
 function openMissions(){const ms=misState();SS('hexmerge.missions',ms);const L2=Missions.list(ms);
  $('mislist').innerHTML=L2.map(m=>`<div class="mis${m.claimed?' done':''}"><div class="t">${m.txt}<br><small>${m.have}/${m.goal} · +${m.coins} 🪙</small></div>${m.claimed?'✓':m.done?`<button class="btn" data-c="${m.id}">Claim</button>`:''}</div>`).join('')+
@@ -189,7 +189,7 @@ function gameText(){const me=S.mode==='pvp'||S.mode==='team-pvp'?0:L.side(g,S.me
 const LOGIN=[20,25,30,40,50,75,100];
 function login(){const x=profile.ext,k=dayKey();const l=x.login||{last:null,n:0};if(l.last===k)return;l.n=l.last===Missions.prevDay(k)?l.n+1:1;l.last=k;x.login=l;const amt=LOGIN[(l.n-1)%7];addCoins(amt);
  const strip=LOGIN.map((v,i)=>'<span class="lgd'+(i<((l.n-1)%7)?' done':i===((l.n-1)%7)?' now':'')+'">D'+(i+1)+'<b>'+v+'</b></span>').join('');
- const d=document.createElement('div');d.className='ov on';d.id='loginb';d.innerHTML='<div class="card"><h2>🎁 Daily login bonus</h2><p>Day '+l.n+' in a row</p><div class="lgstrip">'+strip+'</div><p style="font-size:26px;font-weight:900;color:#ffd54a">+'+amt+' 🪙</p><small class="small">Come back tomorrow for '+LOGIN[l.n%7]+'! Missing a day restarts at Day 1.</small><button class="btn big" id="lgOk">Collect</button></div>';
+ const d=document.createElement('div');d.className='lgban';d.id='loginb';setTimeout(()=>{if(d.isConnected){d.remove();}},4500);d.onclick=()=>d.remove();d.innerHTML='<div class="card"><h2>🎁 Daily login bonus</h2><p>Day '+l.n+' in a row</p><div class="lgstrip">'+strip+'</div><p style="font-size:26px;font-weight:900;color:#ffd54a">+'+amt+' 🪙</p><small class="small">Come back tomorrow for '+LOGIN[l.n%7]+'! Missing a day restarts at Day 1.</small><button class="btn big" id="lgOk">Collect</button></div>';
  $('app').appendChild(d);$('lgOk').onclick=()=>{d.remove();SND.chime();};}
 // ---------- finish ----------
 function finish(){if(!g||g._fin)return;g._fin=true;msg('Game over');$('toast').classList.remove('on');const online=S.mode==='online'||S.mode==='team-online';const pvp=S.mode==='pvp'||S.mode==='team-pvp';

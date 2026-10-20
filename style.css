@@ -87,3 +87,44 @@ svg#board{width:100%;height:100%;max-height:440px;overflow:visible}
 .pbig{display:block;width:100%;text-align:left;margin-top:8px;padding:10px 14px;border-radius:14px;border:2px solid #7f9cff44;background:linear-gradient(135deg,#3a2f9a,#2a2370);color:#fff;font-weight:900;font-size:16px;position:relative}
 .pbig small{display:block;font-size:11px;font-weight:600;opacity:.85}.pbig.armed{background:linear-gradient(135deg,#ffcf3f,#ff7a1a);color:#2a1257}
 .pbig.cancel{background:transparent}.pbig.used{opacity:.4;filter:grayscale(1)}.pbig .usedtag{position:absolute;right:10px;top:8px;font-size:11px;background:#555;color:#fff;padding:2px 7px;border-radius:999px}
+/* ===== v10 meta: shop, chest, level, undo, login banner, account ===== */
+#pups #undoB{max-width:80px}#undoB .cost{display:block;font-size:9px;color:#ffd54a}
+.lvl{font-size:12px;font-weight:800;color:#ffd54a;margin:4px 0}
+.cosg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0 10px}
+.cosi{background:#ffffff10;border:2px solid #ffffff22;border-radius:12px;color:#fff;padding:6px 2px;font-family:inherit;font-weight:800;font-size:11px}
+.cosi.on{border-color:#ffe25c;box-shadow:0 0 10px #ffe25c88}.cosi.lk{opacity:.55}.cosi small{display:block;font-size:10px;color:#ffd54a;font-weight:700}
+#shopList h3{margin:8px 0 2px;font-size:14px;color:#8fb4ff;text-align:left}
+.cprev{display:flex;justify-content:center;gap:2px;height:22px;margin-bottom:3px;border-radius:6px;padding-top:3px}.cprev i{width:16px;height:16px;clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)}
+.cprev i:nth-child(1){background:#3fd8ff}.cprev i:nth-child(2){background:#4dff9a}.cprev i:nth-child(3){background:#ffe14d}
+.tile-neon i{filter:saturate(1.6) brightness(1.15) drop-shadow(0 0 3px #fff)}.tile-pastel i{filter:saturate(.45) brightness(1.25)}.tile-glass i{opacity:.6}.tile-retro i{filter:contrast(1.5) saturate(1.4)}.tile-gold i{filter:sepia(.8) saturate(2.2) hue-rotate(-12deg)}.tile-galaxy i{filter:hue-rotate(55deg) saturate(1.5)}
+.board-night{background:#0b1033}.board-aurora{background:linear-gradient(135deg,#0d5a50,#288c5a)}.board-nebula{background:linear-gradient(135deg,#3a1458,#7a2a7a)}.board-ocean{background:linear-gradient(#08304f,#0a5d8a)}.board-sunset{background:linear-gradient(#ff7a59,#7a2a6a)}.board-royal{background:linear-gradient(135deg,#2a1a5e,#b8901e)}
+.fx-classic,.fx-pulse,.fx-rainbow,.fx-comet,.fx-firework{background:#0b1033}.fx-rainbow i{animation:fxhue 1.5s linear infinite}.fx-pulse i{animation:merge 1s infinite}
+/* hex skins (board + tray) */
+body.sk-neon .cell .in,body.sk-neon #tray svg{filter:saturate(1.6) brightness(1.15) drop-shadow(0 0 4px #ffffffaa)}
+body.sk-pastel .cell .in,body.sk-pastel #tray svg{filter:saturate(.45) brightness(1.25)}
+body.sk-glass .cell .in,body.sk-glass #tray svg{opacity:.72}
+body.sk-retro .cell .in polygon,body.sk-retro #tray polygon{stroke-dasharray:4 3;stroke-width:3}body.sk-retro .cell .in,body.sk-retro #tray svg{filter:contrast(1.4) saturate(1.3)}
+body.sk-gold .cell .in,body.sk-gold #tray svg{filter:sepia(.8) saturate(2.2) hue-rotate(-12deg) brightness(1.05)}
+body.sk-galaxy .cell .in,body.sk-galaxy #tray svg{filter:hue-rotate(55deg) saturate(1.5) drop-shadow(0 0 3px #b48cff)}
+/* board themes */
+body.th-aurora #bwrap{background:radial-gradient(ellipse at center,rgba(40,160,110,.45),transparent 70%)}
+body.th-nebula #bwrap{background:radial-gradient(ellipse at center,rgba(150,50,170,.45),transparent 70%)}
+body.th-ocean #bwrap{background:radial-gradient(ellipse at center,rgba(20,110,170,.5),transparent 70%)}
+body.th-sunset #bwrap{background:radial-gradient(ellipse at center,rgba(255,120,90,.4),rgba(120,40,110,.25) 55%,transparent 75%)}
+body.th-royal #bwrap{background:radial-gradient(ellipse at center,rgba(184,144,30,.4),rgba(42,26,94,.4) 60%,transparent 80%)}
+/* merge effects */
+body.fx-pulse .mg{animation:fxpulse .5s ease-out}@keyframes fxpulse{0%{transform:scale(1)}40%{transform:scale(1.45)}100%{transform:scale(1)}}
+body.fx-rainbow .mg{animation:fxhue .6s linear}@keyframes fxhue{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(360deg)}}
+body.fx-comet .mg{animation:fxcomet .55s ease-out}@keyframes fxcomet{0%{filter:drop-shadow(0 0 0 #fff)}30%{filter:drop-shadow(0 0 14px #fff) brightness(1.8)}100%{filter:none}}
+body.fx-firework .mg{animation:fxfire .7s ease-out}@keyframes fxfire{0%{filter:drop-shadow(0 0 0 #ffd700);transform:scale(1)}30%{filter:drop-shadow(0 0 18px #ff4f6d) brightness(1.9);transform:scale(1.35) rotate(15deg)}100%{filter:none;transform:none}}
+.cell .in{transform-box:fill-box;transform-origin:center}
+/* chest + level */
+.chbox{font-size:84px;margin:6px 0;animation:fxpulse 1.6s infinite}.chres{font-size:20px;font-weight:900;color:#ffd54a;margin:16px 0}.pop2{animation:fxpulse .6s ease-out}
+#chestBody .btn{margin-top:8px}#chestBody .btn:disabled{opacity:.5}
+.lvbig{font-size:64px;font-weight:900;color:#ffd54a;text-shadow:0 0 24px #ffd54a}.lvrw{color:#ffd54a;font-weight:800}
+/* non-blocking login banner */
+.lgban{position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:60;width:92%;max-width:380px;animation:lgin .35s ease-out}
+.lgban .card{padding:8px 10px}.lgban h2{font-size:16px;margin:2px}.lgban p{margin:2px}.lgban .lgstrip{transform:scale(.85)}.lgban .btn.big{padding:6px;font-size:14px}
+@keyframes lgin{from{transform:translate(-50%,-30px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+.apple{display:block;width:100%;margin:8px 0;padding:12px;border-radius:12px;border:0;background:#000;color:#fff;font-weight:800;font-size:16px;font-family:inherit}
+#ovX .btn{width:auto;margin:6px auto 0;display:inline-block;padding:8px 14px}

@@ -12,7 +12,7 @@ const Online=(function(){
  const Q=[];function flush(){const q=Q.splice(0);q.forEach(send);}
  function persist(){if(!st.code)return;try{const m=JSON.parse(localStorage.getItem(GK)||'{}');m[st.code]={code:st.code,id:st.id,me:st.me,host:st.host,size:st.size,seats:st.seats,log:st.log.slice(-1),applied:st.applied,seed:st.seed,started:st.started,over:!!st.over,at:Date.now(),snap:st.snap||null};
   for(const k in m)if(Date.now()-(m[k].at||0)>7*864e5)delete m[k];localStorage.setItem(GK,JSON.stringify(m));}catch(e){}}
- function saved(){try{const m=JSON.parse(localStorage.getItem(GK)||'{}');return Object.values(m).filter(o=>o.started&&!o.over).sort((a,b)=>b.at-a.at)[0]||null;}catch(e){return null;}}
+ function saved(){try{const m=JSON.parse(localStorage.getItem(GK)||'{}');return Object.values(m).filter(o=>o.started&&!o.over&&Date.now()-(o.at||0)<864e5).sort((a,b)=>b.at-a.at)[0]||null;}catch(e){return null;}}
  function clear(code){try{const m=JSON.parse(localStorage.getItem(GK)||'{}');delete m[code];localStorage.setItem(GK,JSON.stringify(m));}catch(e){}}
  function onMsg(tp,payload){const parts=tp.split('/');if(parts[2]!==st.code||!st.on)return;let d;try{d=JSON.parse(payload);}catch(e){return;}if(!d)return;
   if(d.u){if(st.seen.has(d.u))return;st.seen.add(d.u);}

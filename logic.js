@@ -37,6 +37,7 @@ function resolve(R,b0,i,v){if(v===WILD){const wv=wildVal(R,b0,i);const r=resolve
  return{b,pts,steps};}
 function blastCells(g,p,c){const {C,NB,IDX}=geo(g.R);if(p==='bomb')return[c,...NB[c]];const [q,r]=C[c],s=-q-r;const out=[];C.forEach(([a,bb],i)=>{if(a===q||bb===r||(-a-bb)===s)out.push(i);});return out;}
 const canPower=(g,p)=>!g.over&&!g.puTurn&&!g.used[g.turn][p]&&(g.power[g.turn]>0||g.coins[g.turn]>=EXTRA_COST);
+const canStock=(g,p)=>!g.over&&!g.puTurn&&!g.used[g.turn][p];
 const powerCost=g=>g.power[g.turn]>0?0:EXTRA_COST;
 const swapCost=g=>g.swaps[g.turn]>0?0:EXTRA_COST;
 const canSwap=g=>!g.over&&!g.swTurn&&g.trays[g.turn].length>0&&(g.swaps[g.turn]>0||g.coins[g.turn]>=EXTRA_COST);
@@ -45,10 +46,10 @@ function empties(g){const o=[];g.b.forEach((v,i)=>{if(!v)o.push(i);});return o;}
 function finishCheck(g){const full=!g.b.includes(0);if(full||g.done.every(d=>d>=g.turns)){g.over=true;g.full=full;g.winner=g.sc[0]>g.sc[1]?0:g.sc[1]>g.sc[0]?1:-1;}}
 // apply one action; returns a result object or null when illegal
 function apply(g,a){if(g.over||!a)return null;const s=g.turn;
- if(a.t==='boost'){if(a.p!=='double'||!canPower(g,a.p)||g.drops)return null;g.boostPaid=g.power[s]>0?'free':'coins';spend(g);g.used[s][a.p]=1;g.puTurn=true;g.mult[s]=2;g.moveN++;return{t:'boost',p:a.p};}
+ if(a.t==='boost'){if(a.p!=='double'||!(a.stock?canStock(g,a.p):canPower(g,a.p))||g.drops)return null;g.boostPaid=a.stock?'stock':g.power[s]>0?'free':'coins';if(!a.stock)spend(g);g.used[s][a.p]=1;g.puTurn=true;g.mult[s]=2;g.moveN++;return{t:'boost',p:a.p};}
  // v8 (Star Tiles style): cancel an armed Double before the 1st drop, refunded
- if(a.t==='unboost'){if(g.mult[s]<2||g.drops)return null;if(g.boostPaid==='coins')g.coins[s]+=EXTRA_COST;else g.power[s]++;delete g.used[s].double;g.mult[s]=1;g.puTurn=false;g.boostPaid=null;g.moveN++;return{t:'unboost'};}
- if(a.t==='blast'){if(a.p!=='bomb'&&a.p!=='cross'||!canPower(g,a.p)||!(a.c>=0&&a.c<g.b.length))return null;const cells=blastCells(g,a.p,a.c);spend(g);g.used[s][a.p]=1;g.puTurn=true;const hit=cells.filter(c=>g.b[c]);hit.forEach(c=>g.b[c]=0);g.moveN++;return{t:'blast',p:a.p,cells,hit};}
+ if(a.t==='unboost'){if(g.mult[s]<2||g.drops)return null;if(g.boostPaid==='coins')g.coins[s]+=EXTRA_COST;else if(g.boostPaid!=='stock')g.power[s]++;delete g.used[s].double;const paid=g.boostPaid;g.mult[s]=1;g.puTurn=false;g.boostPaid=null;g.moveN++;return{t:'unboost',paid};}
+ if(a.t==='blast'){if(a.p!=='bomb'&&a.p!=='cross'||!(a.stock?canStock(g,a.p):canPower(g,a.p))||!(a.c>=0&&a.c<g.b.length))return null;const cells=blastCells(g,a.p,a.c);if(!a.stock)spend(g);g.used[s][a.p]=1;g.puTurn=true;const hit=cells.filter(c=>g.b[c]);hit.forEach(c=>g.b[c]=0);g.moveN++;return{t:'blast',p:a.p,cells,hit};}
  if(a.t==='swap'){if(!canSwap(g))return null;if(g.swaps[s]>0)g.swaps[s]--;else g.coins[s]-=EXTRA_COST;const n=g.trays[s].length;g.trays[s]=fillTray(g,[],n,s);g.swTurn=true;g.moveN++;return{t:'swap',n};}
  if(a.t==='drop'){const v=g.trays[s][a.k];if(!v||!(a.i>=0&&a.i<g.b.length)||g.b[a.i])return null;const r=resolve(g.R,g.b,a.i,v);const m=g.mult[s];const pts=r.pts*m;
   g.b=r.b;g.sc[side(g,s)]+=pts;g.pts[s]+=pts;g.trays[s].splice(a.k,1);g.drops=(g.drops|0)+1;g.tp=(g.tp|0)+pts;
@@ -97,5 +98,5 @@ function boosts(g,level,pts,left,pu){if(level==='easy'||!pts||g.drops)return[];c
 // play a full turn for the computer on g (used by tests)
 function aiPlay(g,level,rnd){const s=g.turn,start=g.done[s];const out=[];for(const a of aiTurn(g,level,rnd)){if(g.over||g.turn!==s)break;const r=apply(g,a);if(r)out.push([a,r]);}
  let guard=0;while(!g.over&&g.turn===s&&g.done[s]===start&&guard++<4){const em=empties(g);if(!em.length){finishCheck(g);g.over=true;break;}const a={t:'drop',k:0,i:em[0]};out.push([a,apply(g,a)]);}return out;}
-const api={WILD,wildVal,DROPS,MAXV,EXTRA_COST,START_COINS,WIN_COINS,FREE_POWER,FREE_SWAP,PUPS,LEVELS,geo,mulberry,newGame,serialize,restore,resolve,blastCells,apply,canPower,powerCost,swapCost,canSwap,empties,side,aiTurn,aiPlay,bestReply,attachRng,group};
+const api={canStock,WILD,wildVal,DROPS,MAXV,EXTRA_COST,START_COINS,WIN_COINS,FREE_POWER,FREE_SWAP,PUPS,LEVELS,geo,mulberry,newGame,serialize,restore,resolve,blastCells,apply,canPower,powerCost,swapCost,canSwap,empties,side,aiTurn,aiPlay,bestReply,attachRng,group};
 if(typeof module!=='undefined')module.exports=api;else root.HexL=api;})(this);
