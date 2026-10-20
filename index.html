@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#070a1f">
-<title>Hex Merge</title><link rel="stylesheet" href="style.css?v=7"></head><body><div id="app"><canvas id="stars"></canvas>
+<title>Hex Merge</title><link rel="stylesheet" href="style.css?v=8"></head><body><div id="app"><canvas id="stars"></canvas>
 <!-- HOME -->
 <div class="scr on" id="home"><div class="hcard">
  <div class="coins">🪙 <span id="coinN">0</span></div>
@@ -34,7 +34,12 @@
  <div id="bwrap"><svg id="board"></svg></div>
  <div id="tbar"><span id="tmsg">Tap a target hex</span><button class="btn" id="tgo" disabled>BLAST!</button><button class="btn gry" id="tno">Cancel</button></div>
  <div id="tray"></div>
- <div id="pups"></div>
+ <div id="pups"><button class="btn" id="power">⚡<span id="badge">2</span><small>POWER</small></button><div id="pcoins">YOUR COINS<b>🪙 <span id="coinN">100</span></b></div><button class="btn" id="swapB">⇄<small>SWAP</small><span id="swapc" class="cost">FREE</span></button></div>
+ <div id="pmenu"><div class="pcard"><div class="ptitle">⚡ POWER-UPS <span id="pleft"></span></div>
+ <button class="pbig" data-p="double">✖2 DOUBLE POINTS<small>×2 on all 3 pieces this turn · once per game</small></button><button class="pbig" data-p="unboost" id="unboost">↩ CANCEL DOUBLE<small>Refunds it (only before your 1st drop)</small></button>
+ <button class="pbig" data-p="bomb">💣 BOMB<small>Clears a hex + its 6 neighbors · once per game</small></button>
+ <button class="pbig" data-p="cross">✚ CROSS BLAST<small>Clears the 3 lines through a hex · once per game</small></button>
+ <button class="pbig cancel" data-p="cancel">Cancel</button></div></div>
  <div id="pinfo"></div>
 </div>
 <!-- OVERLAYS -->
@@ -59,10 +64,10 @@
  <p><b>Merge:</b> when 3 or more hexes with the same number touch, they merge into ONE hex of the next number, right where you dropped (three 2s → a 3).</p>
  <p><b>Score:</b> number × 10 × hexes merged. If the new hex makes another group of 3+, it merges again: the 2nd merge scores ×2, the 3rd ×3 (combo!).</p>
  <p><b>Supernova:</b> merging up to a 9 blasts it and its neighbors for a 500+ bonus.</p>
- <p><b>⚡ Power-ups</b> (2 free per game, 1 per turn, each type once per game; extra ones cost 50 coins): ✖2 Double and ✖3 Triple multiply ALL 3 drops of that turn (use them before your 1st drop), 💣 Bomb clears a hex and its 6 neighbors, ✚ Cross Blast clears the 3 lines through a hex. Blasts score nothing. ⇄ Swap replaces the pieces left in your tray (1 per turn; 1 free per game, then 50 coins — tap twice to confirm a paid swap).</p>
+ <p><b>⚡ Power-ups</b> (tap the ⚡ button; the badge shows how many free ones you have — 2 per game, then 50 coins each; 1 per turn, each type once per game): ✖2 Double makes ALL 3 drops of your turn score double (arm it before your 1st drop — tap it again to cancel for a refund), 💣 Bomb clears a hex and its 6 neighbors, ✚ Cross Blast clears the 3 lines through a hex. Blasts score nothing. ⇄ Swap (its own button) replaces the pieces left in your tray: 1 per turn, 1 free per game, then 50 coins — tap twice to confirm a paid swap.</p>
  <p><b>Coins:</b> start with 100, win = +10, plus win-streak, mission and daily login bonuses.</p>
  <p>10 turns each or until the board fills. Higher score wins!</p></div></div></div>
 <div class="toast" id="toast"></div>
 </div>
-<script src="mq.js?v=7"></script><script src="logic.js?v=7"></script><script src="missions.js?v=7"></script><script src="online.js?v=7"></script><script src="vendor/supabase.js?v=7"></script><script src="app.js?v=7"></script>
+<script src="mq.js?v=8"></script><script src="logic.js?v=8"></script><script src="missions.js?v=8"></script><script src="online.js?v=8"></script><script src="vendor/supabase.js?v=8"></script><script src="app.js?v=8"></script>
 </body></html>

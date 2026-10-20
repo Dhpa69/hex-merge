@@ -1,7 +1,7 @@
 // Hex Merge core rules + computer players. Pure logic (node-testable), no DOM.
 (function(root){
 const DROPS=3,WILD=10,MAXV=9,EXTRA_COST=50,START_COINS=100,WIN_COINS=10,FREE_POWER=2,FREE_SWAP=1;
-const PUPS=['double','triple','bomb','cross'];
+const PUPS=['double','bomb','cross']; // v8: Triple removed
 const LEVELS=['easy','medium','hard','expert','master'];
 const GEO={};
 function geo(R){if(GEO[R])return GEO[R];const C=[],IDX={};for(let q=-R;q<=R;q++)for(let r=Math.max(-R,-q-R);r<=Math.min(R,-q+R);r++){IDX[q+','+r]=C.length;C.push([q,r]);}
@@ -22,7 +22,7 @@ function newGame(o){o=o||{};const N=o.N||2,R=o.R||(N===4?4:3);const G=geo(R);
   coins:(o.coins||[]).slice(0,N),used:Array.from({length:N},()=>({})),puTurn:false,over:false,winner:null,moveN:0,stats:Array.from({length:N},()=>({merges:0,best:0,combo:0,maxV:0,hexes:0}))};
  while(g.coins.length<N)g.coins.push(START_COINS);attachRng(g);seedStart(g);for(let s=0;s<N;s++)g.trays.push(fillTray(g,[],3));return g;}
 function serialize(g){return JSON.parse(JSON.stringify(g));}
-function restore(o){return attachRng(JSON.parse(JSON.stringify(o)));}
+function restore(o){const g=attachRng(JSON.parse(JSON.stringify(o)));if(g.mult)g.mult=g.mult.map(m=>m>2?2:m);if(g.used)g.used.forEach(u=>{if(u&&u.triple){delete u.triple;}});return g;}
 function group(b,NB,i){const v=b[i],seen=new Set([i]),st=[i];while(st.length){const c=st.pop();for(const n of NB[c])if(!seen.has(n)&&b[n]===v){seen.add(n);st.push(n);}}return[...seen];}
 // v7 wild: becomes the neighbor value giving the most points (ties: higher value); no neighbors -> 1
 function wildVal(R,b,i){const {NB}=geo(R);const vs=[...new Set(NB[i].map(n=>b[n]).filter(x=>x))];if(!vs.length)return 1;let best=null;for(const v of vs){const p=resolve(R,b,i,v).pts;if(!best||p>best.p||p===best.p&&v>best.v)best={v,p};}return best.v;}
@@ -41,7 +41,9 @@ function empties(g){const o=[];g.b.forEach((v,i)=>{if(!v)o.push(i);});return o;}
 function finishCheck(g){const full=!g.b.includes(0);if(full||g.done.every(d=>d>=g.turns)){g.over=true;g.full=full;g.winner=g.sc[0]>g.sc[1]?0:g.sc[1]>g.sc[0]?1:-1;}}
 // apply one action; returns a result object or null when illegal
 function apply(g,a){if(g.over||!a)return null;const s=g.turn;
- if(a.t==='boost'){if(a.p!=='double'&&a.p!=='triple'||!canPower(g,a.p)||g.drops)return null;spend(g);g.used[s][a.p]=1;g.puTurn=true;g.mult[s]=a.p==='double'?2:3;g.moveN++;return{t:'boost',p:a.p};}
+ if(a.t==='boost'){if(a.p!=='double'||!canPower(g,a.p)||g.drops)return null;g.boostPaid=g.power[s]>0?'free':'coins';spend(g);g.used[s][a.p]=1;g.puTurn=true;g.mult[s]=2;g.moveN++;return{t:'boost',p:a.p};}
+ // v8 (Star Tiles style): cancel an armed Double before the 1st drop, refunded
+ if(a.t==='unboost'){if(g.mult[s]<2||g.drops)return null;if(g.boostPaid==='coins')g.coins[s]+=EXTRA_COST;else g.power[s]++;delete g.used[s].double;g.mult[s]=1;g.puTurn=false;g.boostPaid=null;g.moveN++;return{t:'unboost'};}
  if(a.t==='blast'){if(a.p!=='bomb'&&a.p!=='cross'||!canPower(g,a.p)||!(a.c>=0&&a.c<g.b.length))return null;const cells=blastCells(g,a.p,a.c);spend(g);g.used[s][a.p]=1;g.puTurn=true;const hit=cells.filter(c=>g.b[c]);hit.forEach(c=>g.b[c]=0);g.moveN++;return{t:'blast',p:a.p,cells,hit};}
  if(a.t==='swap'){if(!canSwap(g))return null;if(g.swaps[s]>0)g.swaps[s]--;else g.coins[s]-=EXTRA_COST;const n=g.trays[s].length;g.trays[s]=fillTray(g,[],n);g.swTurn=true;g.moveN++;return{t:'swap',n};}
  if(a.t==='drop'){const v=g.trays[s][a.k];if(!v||!(a.i>=0&&a.i<g.b.length)||g.b[a.i])return null;const r=resolve(g.R,g.b,a.i,v);const m=g.mult[s];const pts=r.pts*m;
@@ -87,7 +89,7 @@ function aiTurn0(g,level,rnd){rnd=rnd||Math.random;const s=g.turn;if(!empties(g)
  if((level==='master'||level==='expert')&&!g.drops&&plan.pts===0&&g.swaps[s]>0&&left>2){const c=restore(serialize(g));apply(c,{t:'swap'});const p2=planDrops(c,level,rnd);return[{t:'swap'},...boosts(g,level,p2.pts,left,pu),...p2.acts];}
  return[...boosts(g,level,plan.pts,left,pu),...plan.acts];}
 function boosts(g,level,pts,left,pu){if(level==='easy'||!pts||g.drops)return[];const bigT={medium:600,hard:350,expert:260,master:220}[level],bigD={medium:400,hard:200,expert:150,master:130}[level];
- if(level!=='medium'&&pu('triple')&&(pts>=bigT||left<=1))return[{t:'boost',p:'triple'}];if(pu('double')&&(pts>=bigD||(level==='master'||level==='expert')&&left<=2))return[{t:'boost',p:'double'}];return[];}
+ if(pu('double')&&(pts>=bigD||left<=1||(level==='master'||level==='expert')&&left<=2))return[{t:'boost',p:'double'}];return[];}
 // play a full turn for the computer on g (used by tests)
 function aiPlay(g,level,rnd){const s=g.turn,start=g.done[s];const out=[];for(const a of aiTurn(g,level,rnd)){if(g.over||g.turn!==s)break;const r=apply(g,a);if(r)out.push([a,r]);}
  let guard=0;while(!g.over&&g.turn===s&&g.done[s]===start&&guard++<4){const em=empties(g);if(!em.length){finishCheck(g);g.over=true;break;}const a={t:'drop',k:0,i:em[0]};out.push([a,apply(g,a)]);}return out;}

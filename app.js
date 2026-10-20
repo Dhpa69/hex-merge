@@ -1,6 +1,6 @@
 'use strict';
 // Hex Merge v2 app: modes, UI, coins, missions, streaks, achievements, ranks, leaderboard, daily, online, team, share.
-const VER='v7',SITE='https://dhpa69.github.io/hex-merge/';
+const VER='v8',SITE='https://dhpa69.github.io/hex-merge/';
 const L=HexL,$=id=>document.getElementById(id);
 const COLORS=['','#3fd8ff','#4dff9a','#ffe14d','#ff9f40','#ff4f6d','#d45cff','#6f7bff','#ffffff','#ffd700'];
 const LS=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v;}catch(e){return d;}},SS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
@@ -48,7 +48,7 @@ function drawVal(i,v,anim){const e=cellG(i);if(!e)return;e.innerHTML=v?hexPiece(
 function drawAll(){g.b.forEach((v,i)=>drawVal(i,v));}
 function popAt(i,text,color){const e=svg.querySelector(`.cell[data-i="${i}"]`);if(!e)return;const r=e.getBoundingClientRect(),a=$('app').getBoundingClientRect();const d=document.createElement('div');d.className='pop';d.textContent=text;if(color)d.style.color=color;d.style.left=(r.left+r.width/2-a.left)+'px';d.style.top=(r.top-a.top)+'px';$('app').appendChild(d);setTimeout(()=>d.remove(),1150);}
 // ---------- render ----------
-const PU=[{k:'double',i:'✖2',n:'Double'},{k:'triple',i:'✖3',n:'Triple'},{k:'bomb',i:'💣',n:'Bomb'},{k:'cross',i:'✚',n:'Cross'},{k:'swap',i:'⇄',n:'Swap'}];
+
 function render(){if(!g)return;const solo=g.N===1;
  $('nm0').textContent=sideLabel(0);$('sc0').textContent=g.sc[0].toLocaleString();$('pl1').style.visibility=solo?'hidden':'';if(!solo){$('nm1').textContent=sideLabel(1);$('sc1').textContent=g.sc[1].toLocaleString();}
  $('pl0').classList.toggle('on',L.side(g,g.turn)===0&&!g.over);$('pl1').classList.toggle('on',L.side(g,g.turn)===1&&!g.over);
@@ -57,19 +57,20 @@ function render(){if(!g)return;const solo=g.N===1;
  renderTray();renderPU();}
 function renderTray(){const t=$('tray');t.innerHTML='';const vs=viewSeat();const mine=isHumanTurn()&&vs===g.turn;(g.trays[vs]||[]).forEach((v,k)=>{const d=document.createElement('div');d.className='tp'+(mine&&sel===k?' sel':'')+(mine?'':' lock');
   d.innerHTML=`<svg viewBox="-32 -32 64 64" width="56" height="56" style="overflow:visible">${hexPiece(v,26)}</svg>`;d.onclick=()=>{if(!isHumanTurn()||busy||vs!==g.turn)return;cancelTarget(true);sel=k;SND.tap();renderTray();msg('Tap an empty hex');};t.appendChild(d);});}
-function renderPU(){const p=$('pups');p.innerHTML='';const s=viewSeat(),my=isHumanTurn()&&s===g.turn;
- PU.forEach(u=>{const d=document.createElement('div');let used,cost,act=false;if(u.k==='swap'){used=!!g.swTurn;cost=g.swTurn?'used this turn':g.swaps[s]>0?'FREE':(g.coins[s]|0)>=50?(swapArm?'tap again':'50🪙'):'need 50🪙';act=swapArm&&!g.swTurn;}else{used=!!g.used[s][u.k];cost=used?'used':g.power[s]>0?'FREE':'50🪙';act=(g.mult[s]===2&&u.k==='double')||(g.mult[s]===3&&u.k==='triple')||(tgt&&tgt.p===u.k);}
-  d.className='pu'+(used&&!act?' used':'')+(act?' act':'')+(!my?' off':'');d.innerHTML=`<span class="i">${u.i}</span>${u.n}<small>${cost}</small>`;d.onclick=()=>puTap(u.k);p.appendChild(d);});
- $('pinfo').textContent=`Piece ${Math.min(3,(g.drops|0)+1)} of 3 · ${g.trays[s].length} left this turn${g.mult[s]>1?' · ×'+g.mult[s]+' on all 3 pieces':''} · ⚡ ${g.power[s]} free power-up${g.power[s]===1?'':'s'} left · 1 per turn · 🪙 ${(g.coins[s]|0).toLocaleString()}`;}
+function renderPU(){const s=viewSeat(),my=isHumanTurn()&&s===g.turn,m=g.mult[s]>1;
+ $('badge').textContent=m?'x'+g.mult[s]:g.power[s]>0?g.power[s]:'50🪙';$('power').classList.toggle('on',m||!!tgt);$('power').disabled=!my;
+ $('coinN').textContent=(g.coins[s]|0).toLocaleString();$('swapB').disabled=!my||!!g.swTurn;$('swapB').classList.toggle('arm',!!swapArm);
+ $('swapc').textContent=g.swTurn?'USED':g.swaps[s]>0?'FREE':swapArm?'TAP AGAIN':'50🪙';
+ $('pinfo').textContent=`Piece ${Math.min(3,(g.drops|0)+1)} of 3 · ${g.trays[s].length} left this turn${m?' · ⚡ ×2 on all 3 pieces':''}`;}
 // ---------- input ----------
 function puTap(k){if(!isHumanTurn()||busy)return;const s=g.turn;
  if(k==='swap'){if(g.swTurn){toast('One swap per turn');return;}if(!L.canSwap(g)){toast('Need 50 coins for another swap');return;}
   if(g.swaps[s]<=0&&!swapArm){swapArm=true;renderPU();toast('Swap costs 50 🪙 — tap Swap again to pay');clearTimeout(swapArmT);swapArmT=setTimeout(()=>{swapArm=false;g&&renderPU();},4000);return;}
   swapArm=false;doAct({t:'swap'});return;}
  swapArm=false;
- if(g.used[s][k]){toast('Each power-up once per game');return;}if(g.puTurn){toast('One power-up per turn');return;}if((k==='double'||k==='triple')&&g.drops){toast('Use Double/Triple before your 1st drop');return;}
+ if(g.used[s][k]){toast('Already used this game – each power-up once');return;}if(g.puTurn){toast('One power-up per turn');return;}if(k==='double'&&g.drops){toast('Use Double before your 1st drop');return;}
  if(!L.canPower(g,k)){toast('No free power-ups left — need 50 coins');return;}
- if(k==='double'||k==='triple'){doAct({t:'boost',p:k});return;}
+ if(k==='double'){doAct({t:'boost',p:k});return;}
  if(!g.b.some(v=>v)){toast('Nothing to blast yet');return;}
  sel=null;tgt={p:k,c:null};$('tbar').classList.add('on');$('tmsg').textContent=(k==='bomb'?'💣 Bomb: ':'✚ Cross Blast: ')+'tap a target hex';$('tgo').disabled=true;renderTray();renderPU();}
 function cancelTarget(silent){if(!tgt)return;tgt=null;$('tbar').classList.remove('on');svg.querySelectorAll('.cell.tgt').forEach(e=>e.classList.remove('tgt'));if(!silent)renderPU();}
@@ -80,7 +81,7 @@ function cellTap(i){if(!isHumanTurn()||busy)return;
 $('tgo').onclick=()=>{if(!tgt||tgt.c==null)return;const a={t:'blast',p:tgt.p,c:tgt.c};cancelTarget(true);doAct(a);};$('tno').onclick=()=>cancelTarget();
 // ---------- actions ----------
 async function animate(r,pre){if(!r)return;
- if(r.t==='boost'){SND.pu();toast((r.p==='double'?'✖2 Double':'✖3 Triple')+' — all 3 pieces this turn score ×'+(r.p==='double'?2:3));return;}
+ if(r.t==='boost'){SND.pu();toast('⚡ x2 this turn! All 3 pieces score double');return;}if(r.t==='unboost'){toast('⚡ Double cancelled (refunded)');return;}
  if(r.t==='swap'){SND.pu();msg('⇄ New pieces!'+(g.drops?' '+g.trays[g.turn].length+' left to place':''));return;}
  if(r.t==='blast'){SND.boom();r.cells.forEach(c=>{const e=svg.querySelector(`.cell[data-i="${c}"]`);e&&e.classList.add('tgt');});r.hit.forEach(c=>cellG(c).classList.add('vn'));await wait(320);svg.querySelectorAll('.cell.tgt').forEach(e=>e.classList.remove('tgt'));popAt(r.cells[0],'💥 '+r.hit.length+' cleared','#ff8a5c');return;}
  if(r.t==='drop'){drawVal(r.i,r.v,'dp');SND.drop();await wait(240);if(r.wild){drawVal(r.i,r.wild,'mg');popAt(r.i,'★ Wild → '+r.wild,'#ffe14d');await wait(320);}
@@ -99,12 +100,12 @@ async function doAct(a,opts){opts=opts||{};if(!g||g.over)return false;const seat
  render();next();return true;}
 function next(){if(!g)return;if(g.over){finish();return;}
  const s=g.turn,online=S.mode==='online'||S.mode==='team-online';
- if(S.humans.includes(s)){if(g.drops>0){msg('Nice! '+g.trays[s].length+' piece'+(g.trays[s].length===1?'':'s')+' left this turn');return;}const t=S.mode==='pvp'||S.mode==='team-pvp'?seatName(s)+' — your turn':g.N===4?'Your turn (team '+(L.side(g,s)?'blue':'pink')+')':'Your turn — place all 3 pieces';msg(t);if(S.humans.length>1&&(S.mode==='pvp'||S.mode==='team-pvp'))toast(seatName(s)+'\'s turn',900);return;}
+ if(S.humans.includes(s)){if(g.drops>0){msg('Nice! '+g.trays[s].length+' piece'+(g.trays[s].length===1?'':'s')+' left this turn');return;}const t=S.mode==='pvp'||S.mode==='team-pvp'?seatName(s)+' — your turn':g.N===4?'Your turn (team '+(L.side(g,s)?'blue':'pink')+')':'Your turn — place all 3 pieces';msg(t);if(S.humans.length>1&&!g.puTurn&&(S.mode==='pvp'||S.mode==='team-pvp'))toast(seatName(s)+'\'s turn',900);return;}
  if(S.cpu[s]&&(!online||Online.st.host)){msg(seatName(s)+' is thinking…');runCpu(s);return;}
  msg('Waiting for '+seatName(s)+'…');}
 let cpuRun=0;
 async function runCpu(s){const id=++cpuRun;await wait(550);if(id!==cpuRun||!g||g.over||g.turn!==s)return;
- const acts=L.aiTurn(g,S.cpu[s]);let dropped=false;for(const a of acts){if(!g||g.turn!==s||g.over)break;if(a.t==='boost')toast(seatName(s)+' used '+(a.p==='double'?'✖2 Double':'✖3 Triple')+'!');
+ const acts=L.aiTurn(g,S.cpu[s]);let dropped=false;for(const a of acts){if(!g||g.turn!==s||g.over)break;if(a.t==='boost')toast(seatName(s)+' used '+'⚡ ✖2 Double'+'!');
   if(a.t==='drop'){dropped=true;const ok=await doActNoNext(a);if(!ok)dropped=false;}else await doActNoNext(a);await wait(150);}
  let gd=0;while(g&&!g.over&&g.turn===s&&gd++<4){const em=L.empties(g);if(!em.length)break;await doActNoNext({t:'drop',k:0,i:em[0]});}
  render();next();}
@@ -275,3 +276,14 @@ showProfile();
  else if(q.get('daily')&&profile.name)setTimeout(startDaily,300);})();
 if(!window.__hmTest)setTimeout(login,1200);setTimeout(flushLb,4000);
 window.__hm={get g(){return g;},get S(){return S;},doAct,L,startAI,startDaily,joinOnline,hostOnline,profile};
+
+// v8: Star Tiles-style ⚡ menu
+$('power').onclick=()=>{if(!g||!isHumanTurn()||busy)return;const s=g.turn,m=g.mult[s]>1;cancelTarget(true);
+ $('unboost').style.display=m&&!g.drops?'':'none';$('pleft').textContent=m?'(now x2)':g.power[s]>0?'('+g.power[s]+' free left)':'(costs 50 🪙 · you have '+(g.coins[s]|0)+')';
+ document.querySelectorAll('#pmenu [data-p=double],#pmenu [data-p=bomb],#pmenu [data-p=cross]').forEach(el=>{const k=el.dataset.p,armed=k==='double'&&m,u=!!g.used[s][k]&&!armed;el.classList.toggle('armed',armed);el.classList.toggle('used',u);
+  let t=el.querySelector('.usedtag');if(u&&!t){t=document.createElement('b');t.className='usedtag';t.textContent='USED';el.appendChild(t);}else if(!u&&t)t.remove();
+  const sm=el.querySelector('small');sm.dataset.o=sm.dataset.o||sm.textContent;sm.textContent=armed?'✓ ACTIVE this turn'+(g.drops?'':' · tap to cancel (refund)'):sm.dataset.o;});
+ $('pmenu').classList.add('show');SND.tap();};
+$('pmenu').onclick=e=>{const b=e.target.closest('[data-p]');if(!b&&e.target.id!=='pmenu')return;$('pmenu').classList.remove('show');const p=b&&b.dataset.p;if(!p||p==='cancel')return;
+ if(p==='unboost'||(p==='double'&&g.mult[g.turn]>1)){if(g.drops){toast('Double is locked in once you drop');return;}doAct({t:'unboost'});return;}puTap(p);};
+$('swapB').onclick=()=>puTap('swap');
