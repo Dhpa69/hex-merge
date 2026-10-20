@@ -40,6 +40,6 @@ if(sb){sb.auth.onAuthStateChange((ev,ses)=>{const u=ses&&ses.user||null;if((u&&u
 $('tAcct').onclick=()=>{ui();ov('acctov');};
 $('acApple').onclick=async()=>{if(!sb)return;st('Opening Apple…');const {error}=await sb.auth.signInWithOAuth({provider:'apple',options:{redirectTo:REDIRECT}});if(error)st('Sign-in failed: '+error.message);};
 $('acOut').onclick=async()=>{await push();await sb.auth.signOut();user=null;ui();st('Signed out — this device keeps playing as a guest.');};
-window.Account={get ready(){return ready;},get user(){return user;},merge,push};
+window.Account={get ready(){return ready;},get user(){return user;},get sb(){return sb;},merge,push};
 check();
 })();
