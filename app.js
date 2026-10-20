@@ -1,6 +1,6 @@
 'use strict';
 // Hex Merge v2 app: modes, UI, coins, missions, streaks, achievements, ranks, leaderboard, daily, online, team, share.
-const VER='v6',SITE='https://dhpa69.github.io/hex-merge/';
+const VER='v7',SITE='https://dhpa69.github.io/hex-merge/';
 const L=HexL,$=id=>document.getElementById(id);
 const COLORS=['','#3fd8ff','#4dff9a','#ffe14d','#ff9f40','#ff4f6d','#d45cff','#6f7bff','#ffffff','#ffd700'];
 const LS=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v;}catch(e){return d;}},SS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
@@ -39,10 +39,10 @@ const px=([q,r])=>[SZ*Math.sqrt(3)*(q+r/2),SZ*1.5*r];
 function hexPts(s){let a=[];for(let k=0;k<6;k++){const an=Math.PI/180*(60*k-30);a.push((s*Math.cos(an)).toFixed(1)+','+(s*Math.sin(an)).toFixed(1));}return a.join(' ');}
 function buildBoard(){const G=L.geo(g.R),R=g.R,W=SZ*Math.sqrt(3)*(2*R+1)+10,H=SZ*(3*R+2)+10;svg.setAttribute('viewBox',`${-W/2} ${-H/2} ${W} ${H}`);
  svg.innerHTML=`<defs><filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
- <radialGradient id="shine" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity=".08"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></radialGradient></defs>`;
+ <linearGradient id="rainbow" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff4f6d"/><stop offset=".25" stop-color="#ffe14d"/><stop offset=".5" stop-color="#4dff9a"/><stop offset=".75" stop-color="#3fd8ff"/><stop offset="1" stop-color="#d45cff"/></linearGradient><radialGradient id="shine" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity=".08"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></radialGradient></defs>`;
  G.C.forEach((c,i)=>{const[x,y]=px(c);const e=document.createElementNS('http://www.w3.org/2000/svg','g');e.setAttribute('class','cell');e.setAttribute('transform',`translate(${x},${y})`);e.dataset.i=i;
   e.innerHTML=`<polygon class="base" points="${hexPts(SZ-1.5)}" fill="#ffffff0c" stroke="#7f9cff33" stroke-width="1.5"/><g class="in"></g>`;e.addEventListener('click',()=>cellTap(i));svg.appendChild(e);});}
-function hexPiece(v,s){return`<g filter="url(#glow)"><polygon points="${hexPts(s)}" fill="${COLORS[v]}" stroke="#fff" stroke-opacity=".7" stroke-width="2"/></g><polygon points="${hexPts(s)}" fill="url(#shine)"/><text y="${s*.36}" text-anchor="middle" font-size="${s*1.05}" font-weight="900" fill="#10142e" style="pointer-events:none">${v}</text>`;}
+function hexPiece(v,s){if(v===L.WILD)return`<g filter="url(#glow)"><polygon points="${hexPts(s)}" fill="url(#rainbow)" stroke="#fff" stroke-width="2.5"/></g><polygon points="${hexPts(s)}" fill="url(#shine)"/><text y="${s*.36}" text-anchor="middle" font-size="${s*1.05}" font-weight="900" fill="#fff" stroke="#10142e" stroke-width="1.2" style="pointer-events:none">★</text>`;return`<g filter="url(#glow)"><polygon points="${hexPts(s)}" fill="${COLORS[v]}" stroke="#fff" stroke-opacity=".7" stroke-width="2"/></g><polygon points="${hexPts(s)}" fill="url(#shine)"/><text y="${s*.36}" text-anchor="middle" font-size="${s*1.05}" font-weight="900" fill="#10142e" style="pointer-events:none">${v}</text>`;}
 const cellG=i=>svg.querySelector(`.cell[data-i="${i}"] g.in`);
 function drawVal(i,v,anim){const e=cellG(i);if(!e)return;e.innerHTML=v?hexPiece(v,SZ-4):'';e.classList.remove('mg','dp','vn');if(anim){e.getBoundingClientRect();e.classList.add(anim);}}
 function drawAll(){g.b.forEach((v,i)=>drawVal(i,v));}
@@ -60,7 +60,7 @@ function renderTray(){const t=$('tray');t.innerHTML='';const vs=viewSeat();const
 function renderPU(){const p=$('pups');p.innerHTML='';const s=viewSeat(),my=isHumanTurn()&&s===g.turn;
  PU.forEach(u=>{const d=document.createElement('div');let used,cost,act=false;if(u.k==='swap'){used=!!g.swTurn;cost=g.swTurn?'used this turn':g.swaps[s]>0?'FREE':(g.coins[s]|0)>=50?(swapArm?'tap again':'50🪙'):'need 50🪙';act=swapArm&&!g.swTurn;}else{used=!!g.used[s][u.k];cost=used?'used':g.power[s]>0?'FREE':'50🪙';act=(g.mult[s]===2&&u.k==='double')||(g.mult[s]===3&&u.k==='triple')||(tgt&&tgt.p===u.k);}
   d.className='pu'+(used&&!act?' used':'')+(act?' act':'')+(!my?' off':'');d.innerHTML=`<span class="i">${u.i}</span>${u.n}<small>${cost}</small>`;d.onclick=()=>puTap(u.k);p.appendChild(d);});
- $('pinfo').textContent=`Drop ${Math.min(2,(g.drops|0)+1)} of 2${g.mult[s]>1?' · ×'+g.mult[s]+' on both drops':''} · ⚡ ${g.power[s]} free power-up${g.power[s]===1?'':'s'} left · 1 per turn · 🪙 ${(g.coins[s]|0).toLocaleString()}`;}
+ $('pinfo').textContent=`Piece ${Math.min(3,(g.drops|0)+1)} of 3 · ${g.trays[s].length} left this turn${g.mult[s]>1?' · ×'+g.mult[s]+' on all 3 pieces':''} · ⚡ ${g.power[s]} free power-up${g.power[s]===1?'':'s'} left · 1 per turn · 🪙 ${(g.coins[s]|0).toLocaleString()}`;}
 // ---------- input ----------
 function puTap(k){if(!isHumanTurn()||busy)return;const s=g.turn;
  if(k==='swap'){if(g.swTurn){toast('One swap per turn');return;}if(!L.canSwap(g)){toast('Need 50 coins for another swap');return;}
@@ -80,10 +80,10 @@ function cellTap(i){if(!isHumanTurn()||busy)return;
 $('tgo').onclick=()=>{if(!tgt||tgt.c==null)return;const a={t:'blast',p:tgt.p,c:tgt.c};cancelTarget(true);doAct(a);};$('tno').onclick=()=>cancelTarget();
 // ---------- actions ----------
 async function animate(r,pre){if(!r)return;
- if(r.t==='boost'){SND.pu();toast((r.p==='double'?'✖2 Double':'✖3 Triple')+' — both drops this turn score ×'+(r.p==='double'?2:3));return;}
- if(r.t==='swap'){SND.pu();msg('⇄ New pieces!'+(g.drops?' Place your 2nd piece':''));return;}
+ if(r.t==='boost'){SND.pu();toast((r.p==='double'?'✖2 Double':'✖3 Triple')+' — all 3 pieces this turn score ×'+(r.p==='double'?2:3));return;}
+ if(r.t==='swap'){SND.pu();msg('⇄ New pieces!'+(g.drops?' '+g.trays[g.turn].length+' left to place':''));return;}
  if(r.t==='blast'){SND.boom();r.cells.forEach(c=>{const e=svg.querySelector(`.cell[data-i="${c}"]`);e&&e.classList.add('tgt');});r.hit.forEach(c=>cellG(c).classList.add('vn'));await wait(320);svg.querySelectorAll('.cell.tgt').forEach(e=>e.classList.remove('tgt'));popAt(r.cells[0],'💥 '+r.hit.length+' cleared','#ff8a5c');return;}
- if(r.t==='drop'){drawVal(r.i,r.v,'dp');SND.drop();await wait(240);
+ if(r.t==='drop'){drawVal(r.i,r.v,'dp');SND.drop();await wait(240);if(r.wild){drawVal(r.i,r.wild,'mg');popAt(r.i,'★ Wild → '+r.wild,'#ffe14d');await wait(320);}
   for(const st of r.steps){if(st.nova){st.cells.forEach(c=>cellG(c).classList.add('vn'));SND.nova();popAt(r.i,'🌟 SUPERNOVA +'+(st.pts*r.mult).toLocaleString(),'#fff');await wait(450);continue;}
    st.cells.forEach(c=>{if(c!==r.i)cellG(c).classList.add('vn');});await wait(220);st.cells.forEach(c=>{if(c!==r.i)drawVal(c,0);});drawVal(r.i,st.nv,'mg');SND.merge(st.combo);
    popAt(r.i,(st.combo>1?'COMBO ×'+st.combo+' ':'')+'+'+(st.pts*r.mult).toLocaleString()+(r.mult>1?' (×'+r.mult+')':''));await wait(360);}
@@ -99,14 +99,14 @@ async function doAct(a,opts){opts=opts||{};if(!g||g.over)return false;const seat
  render();next();return true;}
 function next(){if(!g)return;if(g.over){finish();return;}
  const s=g.turn,online=S.mode==='online'||S.mode==='team-online';
- if(S.humans.includes(s)){if(g.drops>0){msg('Nice! Now place your 2nd piece');return;}const t=S.mode==='pvp'||S.mode==='team-pvp'?seatName(s)+' — your turn':g.N===4?'Your turn (team '+(L.side(g,s)?'blue':'pink')+')':'Your turn — place 2 pieces';msg(t);if(S.humans.length>1&&(S.mode==='pvp'||S.mode==='team-pvp'))toast(seatName(s)+'\'s turn',900);return;}
+ if(S.humans.includes(s)){if(g.drops>0){msg('Nice! '+g.trays[s].length+' piece'+(g.trays[s].length===1?'':'s')+' left this turn');return;}const t=S.mode==='pvp'||S.mode==='team-pvp'?seatName(s)+' — your turn':g.N===4?'Your turn (team '+(L.side(g,s)?'blue':'pink')+')':'Your turn — place all 3 pieces';msg(t);if(S.humans.length>1&&(S.mode==='pvp'||S.mode==='team-pvp'))toast(seatName(s)+'\'s turn',900);return;}
  if(S.cpu[s]&&(!online||Online.st.host)){msg(seatName(s)+' is thinking…');runCpu(s);return;}
  msg('Waiting for '+seatName(s)+'…');}
 let cpuRun=0;
 async function runCpu(s){const id=++cpuRun;await wait(550);if(id!==cpuRun||!g||g.over||g.turn!==s)return;
  const acts=L.aiTurn(g,S.cpu[s]);let dropped=false;for(const a of acts){if(!g||g.turn!==s||g.over)break;if(a.t==='boost')toast(seatName(s)+' used '+(a.p==='double'?'✖2 Double':'✖3 Triple')+'!');
   if(a.t==='drop'){dropped=true;const ok=await doActNoNext(a);if(!ok)dropped=false;}else await doActNoNext(a);await wait(150);}
- let gd=0;while(g&&!g.over&&g.turn===s&&gd++<3){const em=L.empties(g);if(!em.length)break;await doActNoNext({t:'drop',k:0,i:em[0]});}
+ let gd=0;while(g&&!g.over&&g.turn===s&&gd++<4){const em=L.empties(g);if(!em.length)break;await doActNoNext({t:'drop',k:0,i:em[0]});}
  render();next();}
 async function doActNoNext(a){const seat=g.turn;const r=L.apply(g,a);if(!r)return false;busy=true;try{render();await animate(r);drawAll();const online=S.mode==='online'||S.mode==='team-online';if(online)Online.cpuAct(a,L.serialize(g),seat);autosave();}finally{busy=false;}return true;}
 // ---------- start modes ----------

@@ -1,6 +1,6 @@
 // Hex Merge core rules + computer players. Pure logic (node-testable), no DOM.
 (function(root){
-const DROPS=2,MAXV=9,EXTRA_COST=50,START_COINS=100,WIN_COINS=10,FREE_POWER=2,FREE_SWAP=1;
+const DROPS=3,WILD=10,MAXV=9,EXTRA_COST=50,START_COINS=100,WIN_COINS=10,FREE_POWER=2,FREE_SWAP=1;
 const PUPS=['double','triple','bomb','cross'];
 const LEVELS=['easy','medium','hard','expert','master'];
 const GEO={};
@@ -9,9 +9,10 @@ function geo(R){if(GEO[R])return GEO[R];const C=[],IDX={};for(let q=-R;q<=R;q++)
  return GEO[R]={R,C,IDX,NB};}
 function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function attachRng(g){const base=mulberry(g.seed);for(let i=0;i<(g.rc|0);i++)base();Object.defineProperty(g,'rng',{value:()=>{g.rc=(g.rc|0)+1;return base();},enumerable:false,configurable:true,writable:true});return g;}
-function draw(g){const x=g.rng();return x<.45?1:x<.8?2:x<.97?3:4;}
+// v7: ~1 in 10 slots is a wild piece (WILD); otherwise 1-4
+function draw(g){if(g.rng()<.1)return WILD;const x=g.rng();return x<.45?1:x<.8?2:x<.97?3:4;}
 // v6: a tray never holds 3 identical pieces
-function fillTray(g,t,n){while(t.length<n){let v=draw(g),k=0;while(t.length===2&&t[0]===t[1]&&v===t[0]&&k++<20)v=draw(g);if(t.length===2&&t[0]===t[1]&&v===t[0])v=t[0]%4+1;t.push(v);}return t;}
+function fillTray(g,t,n){while(t.length<n){let v=draw(g),k=0;while((t.length===2&&t[0]===t[1]&&v===t[0]||v===WILD&&t.includes(WILD))&&k++<20)v=draw(g);if(v===WILD&&t.includes(WILD))v=1+(t.length%3);if(t.length===2&&t[0]===t[1]&&v===t[0])v=t[0]%4+1;t.push(v);}return t;}
 // v6: every game starts with 2 random pieces (from the seed, so online players match), never adjacent so nothing merges
 function seedStart(g){const G=geo(g.R),n=G.C.length;let a=Math.floor(g.rng()*n),b,k=0;do{b=Math.floor(g.rng()*n);}while((b===a||G.NB[a].includes(b))&&k++<50);g.b[a]=1+Math.floor(g.rng()*3);g.b[b]=1+Math.floor(g.rng()*3);}
 function side(g,s){return g.N===4?s%2:s;}
@@ -23,7 +24,9 @@ function newGame(o){o=o||{};const N=o.N||2,R=o.R||(N===4?4:3);const G=geo(R);
 function serialize(g){return JSON.parse(JSON.stringify(g));}
 function restore(o){return attachRng(JSON.parse(JSON.stringify(o)));}
 function group(b,NB,i){const v=b[i],seen=new Set([i]),st=[i];while(st.length){const c=st.pop();for(const n of NB[c])if(!seen.has(n)&&b[n]===v){seen.add(n);st.push(n);}}return[...seen];}
-function resolve(R,b0,i,v){const {NB}=geo(R),b=b0.slice();b[i]=v;let pts=0,combo=1;const steps=[];
+// v7 wild: becomes the neighbor value giving the most points (ties: higher value); no neighbors -> 1
+function wildVal(R,b,i){const {NB}=geo(R);const vs=[...new Set(NB[i].map(n=>b[n]).filter(x=>x))];if(!vs.length)return 1;let best=null;for(const v of vs){const p=resolve(R,b,i,v).pts;if(!best||p>best.p||p===best.p&&v>best.v)best={v,p};}return best.v;}
+function resolve(R,b0,i,v){if(v===WILD){const wv=wildVal(R,b0,i);const r=resolve(R,b0,i,wv);r.wild=wv;return r;}const {NB}=geo(R),b=b0.slice();b[i]=v;let pts=0,combo=1;const steps=[];
  while(b[i]<MAXV){const g=group(b,NB,i);if(g.length<3)break;const val=b[i],p=val*10*g.length*combo;pts+=p;for(const c of g)b[c]=0;b[i]=val+1;steps.push({cells:g,val,nv:val+1,pts:p,combo});combo++;}
  // a 9 formed by merging is a supernova: clears its ring for a bonus
  if(b[i]===MAXV&&steps.length){const {NB:N2}=geo(R);let n=0;for(const c of N2[i])if(b[c]){n++;b[c]=0;}const p=500+n*50;pts+=p;b[i]=0;steps.push({nova:true,cells:[i,...N2[i]],pts:p,combo});}
@@ -48,7 +51,7 @@ function apply(g,a){if(g.over||!a)return null;const s=g.turn;
   const end=g.drops>=DROPS||!g.trays[s].length||!g.b.includes(0);
   if(end){g.mult[s]=1;fillTray(g,g.trays[s],3);g.done[s]++;g.puTurn=false;g.swTurn=false;g.drops=0;g.tp=0;
    let n=s;for(let k=0;k<g.N;k++){n=(n+1)%g.N;if(g.done[n]<g.turns)break;}g.turn=n;}
-  finishCheck(g);return{t:'drop',v,i:a.i,pts,mult:m,steps:r.steps,seat:s,dropN,turnEnd:end,turnPts};}
+  finishCheck(g);return{t:'drop',v,wild:r.wild,i:a.i,pts,mult:m,steps:r.steps,seat:s,dropN,turnEnd:end,turnPts};}
  return null;}
 // ---------- computer players ----------
 function pairValue(R,b){const {NB}=geo(R);let s=0;const seen=new Set();for(let i=0;i<b.length;i++){if(!b[i]||seen.has(i))continue;const gr=group(b,NB,i);gr.forEach(c=>seen.add(c));if(gr.length===2)s+=b[i]*6;}return s;}
@@ -76,7 +79,10 @@ function planDrops(g,level,rnd){const s=g.turn,P=AIP[level]||AIP.medium,tray=g.t
   // make sure later drops still point at empty cells
   const b2=g.b.slice(),t2=tray.slice();acts=acts.filter(x=>{if(b2[x.i]||!t2[x.k])return false;const r=resolve(g.R,b2,x.i,t2[x.k]);r.b.forEach((y,q)=>b2[q]=y);t2.splice(x.k,1);return true;});}
  return {acts,pts:best.pts};}
-function aiTurn(g,level,rnd){rnd=rnd||Math.random;const s=g.turn;if(!empties(g).length)return[];const left=g.turns-g.done[s];
+function fillGreedy(g,acts){const c=restore(serialize(g)),s=g.turn,st=g.done[s];const out=[];for(const a of acts){if(c.over||c.turn!==s||c.done[s]!==st)break;if(apply(c,a))out.push(a);}
+ let k=0;while(!c.over&&c.turn===s&&c.done[s]===st&&k++<4){const d=greedyDrop(c.R,c.b,c.trays[s]);if(!d)break;const a={t:'drop',k:c.trays[s].indexOf(d.v),i:d.i};if(!apply(c,a))break;out.push(a);}return out;}
+function aiTurn(g,level,rnd){return fillGreedy(g,aiTurn0(g,level,rnd));}
+function aiTurn0(g,level,rnd){rnd=rnd||Math.random;const s=g.turn;if(!empties(g).length)return[];const left=g.turns-g.done[s];
  let plan=planDrops(g,level,rnd);const out=[];const pu=p=>canPower(g,p)&&g.power[s]>0;
  if((level==='master'||level==='expert')&&!g.drops&&plan.pts===0&&g.swaps[s]>0&&left>2){const c=restore(serialize(g));apply(c,{t:'swap'});const p2=planDrops(c,level,rnd);return[{t:'swap'},...boosts(g,level,p2.pts,left,pu),...p2.acts];}
  return[...boosts(g,level,plan.pts,left,pu),...plan.acts];}
@@ -85,5 +91,5 @@ function boosts(g,level,pts,left,pu){if(level==='easy'||!pts||g.drops)return[];c
 // play a full turn for the computer on g (used by tests)
 function aiPlay(g,level,rnd){const s=g.turn,start=g.done[s];const out=[];for(const a of aiTurn(g,level,rnd)){if(g.over||g.turn!==s)break;const r=apply(g,a);if(r)out.push([a,r]);}
  let guard=0;while(!g.over&&g.turn===s&&g.done[s]===start&&guard++<4){const em=empties(g);if(!em.length){finishCheck(g);g.over=true;break;}const a={t:'drop',k:0,i:em[0]};out.push([a,apply(g,a)]);}return out;}
-const api={DROPS,MAXV,EXTRA_COST,START_COINS,WIN_COINS,FREE_POWER,FREE_SWAP,PUPS,LEVELS,geo,mulberry,newGame,serialize,restore,resolve,blastCells,apply,canPower,powerCost,swapCost,canSwap,empties,side,aiTurn,aiPlay,bestReply,attachRng,group};
+const api={WILD,wildVal,DROPS,MAXV,EXTRA_COST,START_COINS,WIN_COINS,FREE_POWER,FREE_SWAP,PUPS,LEVELS,geo,mulberry,newGame,serialize,restore,resolve,blastCells,apply,canPower,powerCost,swapCost,canSwap,empties,side,aiTurn,aiPlay,bestReply,attachRng,group};
 if(typeof module!=='undefined')module.exports=api;else root.HexL=api;})(this);

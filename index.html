@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#070a1f">
-<title>Hex Merge</title><link rel="stylesheet" href="style.css?v=6"></head><body><div id="app"><canvas id="stars"></canvas>
+<title>Hex Merge</title><link rel="stylesheet" href="style.css?v=7"></head><body><div id="app"><canvas id="stars"></canvas>
 <!-- HOME -->
 <div class="scr on" id="home"><div class="hcard">
  <div class="coins">🪙 <span id="coinN">0</span></div>
@@ -50,18 +50,19 @@
 <div class="ov" id="lb"><div class="card"><div class="chhead"><b>🏆 Ranks</b><button class="btn" id="lbClose">✕</button></div>
  <div class="lbtabs"><button data-t="week" class="on">This week</button><button data-t="daily">Daily</button><button data-t="mine">My bests</button><button data-t="ach">Badges</button></div><div id="rkInfo"></div><div id="lbList"></div></div></div>
 <div class="ov" id="team"><div class="card"><div class="chhead"><b>👥 Team 2v2</b><button class="btn" id="teamClose">✕</button></div>
- <p class="small">Two teams of two on a bigger board (61 hexes). Teammates share a score. 10 turns each (2 drops per turn), turns go around the table.</p>
+ <p class="small">Two teams of two on a bigger board (61 hexes). Teammates share a score. 10 turns each (a turn = all 3 tray pieces), turns go around the table.</p>
  <button class="btn big" id="teamAI">🤖 You + computer vs 2 computers</button><button class="btn big" id="teamPP">👥 4 players, pass &amp; play</button><button class="btn big" id="teamOn">🌐 Host online team room</button>
  <small class="small">The computers use the difficulty picked on the home screen.</small></div></div>
 <div class="ov" id="howto"><div class="card"><div class="chhead"><b>❓ How to play</b><button class="btn" id="howClose">✕</button></div><div class="rules">
- <p><b>Your turn:</b> place 2 of your 3 tray pieces, in any order — tap a piece, then tap an empty hex. Merges happen after each drop. Your tray refills to 3 for your next turn.</p>
+ <p><b>Your turn:</b> place ALL 3 of your tray pieces, in any order — tap a piece, then tap an empty hex. Merges happen after each drop. Once all 3 are placed your tray refills and the turn passes. Your tray never has 3 identical pieces. The game ends after everyone's 10 turns, or as soon as the board is full.</p>
+ <p><b>★ Wild piece</b> (rare rainbow hex, at most 1 per tray): when placed it turns into whichever neighbor number gives the best merge. With no neighbors it becomes a 1.</p>
  <p><b>Merge:</b> when 3 or more hexes with the same number touch, they merge into ONE hex of the next number, right where you dropped (three 2s → a 3).</p>
  <p><b>Score:</b> number × 10 × hexes merged. If the new hex makes another group of 3+, it merges again: the 2nd merge scores ×2, the 3rd ×3 (combo!).</p>
  <p><b>Supernova:</b> merging up to a 9 blasts it and its neighbors for a 500+ bonus.</p>
- <p><b>⚡ Power-ups</b> (2 free per game, 1 per turn, each type once per game; extra ones cost 50 coins): ✖2 Double and ✖3 Triple multiply BOTH drops of that turn (use them before your 1st drop), 💣 Bomb clears a hex and its 6 neighbors, ✚ Cross Blast clears the 3 lines through a hex. Blasts score nothing. ⇄ Swap replaces the pieces left in your tray (1 per turn; 1 free per game, then 50 coins — tap twice to confirm a paid swap).</p>
+ <p><b>⚡ Power-ups</b> (2 free per game, 1 per turn, each type once per game; extra ones cost 50 coins): ✖2 Double and ✖3 Triple multiply ALL 3 drops of that turn (use them before your 1st drop), 💣 Bomb clears a hex and its 6 neighbors, ✚ Cross Blast clears the 3 lines through a hex. Blasts score nothing. ⇄ Swap replaces the pieces left in your tray (1 per turn; 1 free per game, then 50 coins — tap twice to confirm a paid swap).</p>
  <p><b>Coins:</b> start with 100, win = +10, plus win-streak, mission and daily login bonuses.</p>
  <p>10 turns each or until the board fills. Higher score wins!</p></div></div></div>
 <div class="toast" id="toast"></div>
 </div>
-<script src="mq.js?v=6"></script><script src="logic.js?v=6"></script><script src="missions.js?v=6"></script><script src="online.js?v=6"></script><script src="vendor/supabase.js?v=6"></script><script src="app.js?v=6"></script>
+<script src="mq.js?v=7"></script><script src="logic.js?v=7"></script><script src="missions.js?v=7"></script><script src="online.js?v=7"></script><script src="vendor/supabase.js?v=7"></script><script src="app.js?v=7"></script>
 </body></html>
