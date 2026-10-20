@@ -1,6 +1,6 @@
 'use strict';
 // Hex Merge v2 app: modes, UI, coins, missions, streaks, achievements, ranks, leaderboard, daily, online, team, share.
-const VER='v8',SITE='https://dhpa69.github.io/hex-merge/';
+const VER='v9',SITE='https://dhpa69.github.io/hex-merge/';
 const L=HexL,$=id=>document.getElementById(id);
 const COLORS=['','#3fd8ff','#4dff9a','#ffe14d','#ff9f40','#ff4f6d','#d45cff','#6f7bff','#ffffff','#ffd700'];
 const LS=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v;}catch(e){return d;}},SS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
@@ -98,13 +98,13 @@ async function doAct(a,opts){opts=opts||{};if(!g||g.over)return false;const seat
   if(r.t==='drop'&&(seat===S.me)&&S.mode!=='pvp'&&S.mode!=='team-pvp')trackMove(r,seat);
   autosave();}finally{busy=false;}
  render();next();return true;}
-function next(){if(!g)return;if(g.over){finish();return;}
+function next(){if(!g)return;if(g.over){finish();return;}if(busy&&!S.cpu[g.turn]){setTimeout(next,120);return;}
  const s=g.turn,online=S.mode==='online'||S.mode==='team-online';
  if(S.humans.includes(s)){if(g.drops>0){msg('Nice! '+g.trays[s].length+' piece'+(g.trays[s].length===1?'':'s')+' left this turn');return;}const t=S.mode==='pvp'||S.mode==='team-pvp'?seatName(s)+' — your turn':g.N===4?'Your turn (team '+(L.side(g,s)?'blue':'pink')+')':'Your turn — place all 3 pieces';msg(t);if(S.humans.length>1&&!g.puTurn&&(S.mode==='pvp'||S.mode==='team-pvp'))toast(seatName(s)+'\'s turn',900);return;}
  if(S.cpu[s]&&(!online||Online.st.host)){msg(seatName(s)+' is thinking…');runCpu(s);return;}
  msg('Waiting for '+seatName(s)+'…');}
 let cpuRun=0;
-async function runCpu(s){const id=++cpuRun;await wait(550);if(id!==cpuRun||!g||g.over||g.turn!==s)return;
+async function runCpu(s){const id=++cpuRun;await wait(g&&!g.moveN?2100:550);if(id!==cpuRun||!g)return;if(g.over||g.turn!==s){next();return;}
  const acts=L.aiTurn(g,S.cpu[s]);let dropped=false;for(const a of acts){if(!g||g.turn!==s||g.over)break;if(a.t==='boost')toast(seatName(s)+' used '+'⚡ ✖2 Double'+'!');
   if(a.t==='drop'){dropped=true;const ok=await doActNoNext(a);if(!ok)dropped=false;}else await doActNoNext(a);await wait(150);}
  let gd=0;while(g&&!g.over&&g.turn===s&&gd++<4){const em=L.empties(g);if(!em.length)break;await doActNoNext({t:'drop',k:0,i:em[0]});}
@@ -112,7 +112,7 @@ async function runCpu(s){const id=++cpuRun;await wait(550);if(id!==cpuRun||!g||g
 async function doActNoNext(a){const seat=g.turn;const r=L.apply(g,a);if(!r)return false;busy=true;try{render();await animate(r);drawAll();const online=S.mode==='online'||S.mode==='team-online';if(online)Online.cpuAct(a,L.serialize(g),seat);autosave();}finally{busy=false;}return true;}
 // ---------- start modes ----------
 function needName(){const nm=$('pname').value.trim();if(!nm){$('pname').focus();toast('Enter your name first');return null;}profile.name=nm;saveProfile();return nm;}
-function begin(game,sess){g=game;S=sess;swapArm=false;if(S.me>=0&&S.humans.includes(S.me))g.coins[S.me]=profile.coins|0;busy=false;sel=null;tgt=null;cpuRun++;$('tbar').classList.remove('on');['endp','onl','team','chat'].forEach(i=>ov(i,false));show('game');buildBoard();drawAll();render();next();autosave();}
+function begin(game,sess){g=game;S=sess;swapArm=false;if(S.me>=0&&S.humans.includes(S.me))g.coins[S.me]=profile.coins|0;busy=false;sel=null;tgt=null;cpuRun++;$('tbar').classList.remove('on');['endp','onl','team','chat'].forEach(i=>ov(i,false));show('game');buildBoard();drawAll();render();if(g.N>1&&!g.moveN){const f=g.turn;const who=g.N===4?seatName(f)+' (team '+(L.side(g,f)?'blue':'pink')+')':seatName(f);setTimeout(()=>toast('🎲 '+who+' goes first!',2000),60);}next();autosave();}
 function startAI(){const nm=needName();if(!nm)return;const lv=profile.difficulty;clearSave();
  begin(L.newGame({mode:'ai',coins:[profile.coins,100]}),{mode:'ai',humans:[0],cpu:{1:lv},me:0,names:[nm,'CPU · '+cap(lv)],level:lv});}
 function startPvP(){const nm=needName()||'Player 1';clearSave();begin(L.newGame({mode:'pvp',coins:[profile.coins,100]}),{mode:'pvp',humans:[0,1],cpu:{},me:0,names:[nm,'Player 2']});}
