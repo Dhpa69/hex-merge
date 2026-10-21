@@ -1,6 +1,6 @@
 'use strict';
 // Hex Merge v2 app: modes, UI, coins, missions, streaks, achievements, ranks, leaderboard, daily, online, team, share.
-const VER='v11',SITE='https://dhpa69.github.io/hex-merge/';
+const VER='v12',SITE='https://dhpa69.github.io/hex-merge/';
 const L=HexL,$=id=>document.getElementById(id);
 const COLORS=['','#3fd8ff','#4dff9a','#ffe14d','#ff9f40','#ff4f6d','#d45cff','#6f7bff','#ffffff','#ffd700'];
 const LS=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v;}catch(e){return d;}},SS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
@@ -221,9 +221,10 @@ $('endShare').onclick=()=>{if(S.mode==='daily'){const r=dailyRes()[S.day]||{day:
 $('homeB').onclick=()=>{ov('endp',false);goHome();};
 function goHome(){cpuRun++;if(S&&(S.mode==='online'||S.mode==='team-online'))Online.leave();show('home');}
 // ---------- online ----------
-function onlHandlers(){return{room:roomUI,status:t=>{$('onlmsg').textContent=t;},start:d=>onlineBegin(d),act:onRemoteAct,chat:chatIn,rematch:d=>{if(!$('endp').classList.contains('on'))return;$('ovX').innerHTML+='<br><b>'+(d.name||'Opponent')+' wants a rematch!</b>';$('again').textContent='▶ Join rematch';S.rematchCode=d.code;},net:()=>{const u=Online.up;if(!Online.st.started)$('onlmsg').textContent=(u.length?'Connected ✓ ':'Connecting… ')+(Online.st.host?'Waiting for players':'Joining room');}};}
+function onlHandlers(){return{room:roomUI,status:t=>{$('onlmsg').textContent=t;},start:d=>onlineBegin(d),act:onRemoteAct,chat:chatIn,rematch:d=>{if(!$('endp').classList.contains('on')||isBlk(d.name,d.from))return;$('ovX').innerHTML+='<br><b>'+(d.name||'Opponent')+' wants a rematch!</b>';$('again').textContent='▶ Join rematch';S.rematchCode=d.code;},net:()=>{const u=Online.up;if(!Online.st.started)$('onlmsg').textContent=(u.length?'Connected ✓ ':'Connecting… ')+(Online.st.host?'Waiting for players':'Joining room');}};}
 function roomUI(){const st=Online.st;$('onlcode').textContent=st.code;const n=st.size;let h='';for(let i=0;i<n;i++){const s=st.seats[i];h+=`<div class="seat ${n===4?(i%2?'b':'a'):''}">${n===4?(i%2?'🔵 ':'🩷 '):''}Seat ${i+1}: ${s?s.name+(s.id===st.id?' (you)':''):'<i>waiting…</i>'}</div>`;}$('seatList').innerHTML=h;
  const full=st.seats.length>=n;$('onlStart').style.display=st.host&&full?'':'none';$('addCpu').style.display=st.host&&!full&&n===4?'':'none';
+ if(blkInRoom()){$('onlStart').style.display='none';$('onlmsg').textContent='⛔ A player you blocked is in this room. Tap Cancel and host a new room.';return;}
  $('onlmsg').textContent=st.host?(full?'Everyone is here — tap Start!':'Share the code or link. Waiting for '+(n-st.seats.length)+' more…'):'Joined! Waiting for the host to start…';}
 function hostOnline(size){const nm=needName();if(!nm)return;Online.host(nm,profile.coins,size,onlHandlers());$('onlT').textContent=size===4?'👥 Online team room':'🌐 Online room';roomUI();ov('team',false);ov('onl');}
 function joinOnline(code){const nm=needName();if(!nm)return;code=String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length<4){toast('Enter the room code');return;}
@@ -235,7 +236,7 @@ $('copyCode').onclick=async()=>{try{await navigator.clipboard.writeText(Online.s
 $('shareCode').onclick=()=>share('⬢ Join my Hex Merge game! Room code '+Online.st.code+'\n'+SITE+'?room='+Online.st.code,'Hex Merge room');
 function sessFor(d,me){const N=d.size,cpu={},humans=[];d.seats.forEach((s,i)=>{if(s.cpu)cpu[i]=profile.difficulty;else if(i===me)humans.push(i);});
  return{mode:N===4?'team-online':'online',team:N===4,humans,cpu,me,names:d.seats.map((s,i)=>i===me?s.name+' (you)':s.name),code:Online.st.code};}
-function onlineBegin(d){const me=Online.st.me;const game=L.newGame({mode:'online',N:d.size,seed:d.seed,coins:d.seats.map(s=>s.coins|0||100)});begin(game,sessFor(d,me));
+function onlineBegin(d){if(blkInRoom())toast('⛔ A player you blocked is in this game — their chat is hidden',2500);const me=Online.st.me;const game=L.newGame({mode:'online',N:d.size,seed:d.seed,coins:d.seats.map(s=>s.coins|0||100)});begin(game,sessFor(d,me));
  toast('🌐 Game on! Room '+Online.st.code,1500);setTimeout(()=>Online.chat(profile.name,'',"rk",{r:RK().rating}),800);}
 async function onRemoteAct(d){if(!g||!S||!(S.mode==='online'||S.mode==='team-online')){return;}
  while(busy)await wait(50);const pre=g.b.slice();const r=L.apply(g,d.a);if(r){busy=true;try{render();await animate(r);}finally{busy=false;}}
@@ -249,10 +250,25 @@ Online.leave();const code=Online.host(nm,profile.coins,size,onlHandlers());
  roomUI();ov('endp',false);ov('onl');}
 // ---------- chat ----------
 const chatLog=[];
-function chatIn(d){if(d.sys==='rk'){if(d.seat!==S?.me&&+d.r>0&&S)S.oppRating=+d.r;return;}if(profile.chatOff)return;chatLog.push(d);drawChat();if(!$('chat').classList.contains('on'))$('chatDot').classList.add('on');SND.chime();}
-function drawChat(){$('chlist').innerHTML=chatLog.slice(-60).map(m=>`<div class="cm${m.from===Online.st.id?' me':''}"><b>${String(m.name||'?').replace(/</g,'&lt;')}:</b> ${String(m.txt).replace(/</g,'&lt;')}</div>`).join('');$('chlist').scrollTop=1e9;}
+function chatIn(d){if(d.sys==='rk'){if(d.seat!==S?.me&&+d.r>0&&S)S.oppRating=+d.r;return;}if(profile.chatOff||isBlk(d.name,d.from))return;chatLog.push(d);drawChat();if(!$('chat').classList.contains('on'))$('chatDot').classList.add('on');SND.chime();}
+function drawChat(){const me=Online.st.id;$('chlist').innerHTML=chatLog.slice(-60).map((m,i,a)=>{const k=chatLog.length-a.length+i,mine=m.from===me;
+ return `<div class="cm${mine?' me':''}"><b>${esc(m.name||'?')}:</b> ${esc(m.txt)}${mine?'':`<span class="cmt"><button data-rep="${k}" title="Report">🚩</button><button data-blk="${k}" title="Block">⛔</button></span>`}</div>`;}).join('')||'<p class="small">No messages yet. Tap 🚩 to report or ⛔ to block a player.</p>';$('chlist').scrollTop=1e9;
+ $('chMute').textContent=profile.chatOff?'🔕':'🔔';$('chUnblk').style.display=blocked().length?'':'none';}
+// v12 chat safety: report (flags message + room in Supabase), block (hides their chat, ignores their rematch, warns when they are in your room), mute all chat.
+const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const blocked=()=>LS('hexmerge.blocked',[]),isBlk=(n,id)=>blocked().some(b=>b.n===String(n||'').toLowerCase()||id&&b.id===id);
+async function reportMsg(k){const m=chatLog[k];if(!m)return;if(!confirm('Report '+(m.name||'this player')+' for this message? It is sent to the developer for review.'))return;
+ const msgs=chatLog.slice(-15).map(x=>(x.from===Online.st.id?'me':x.name)+': '+x.txt);let ok=false;
+ try{const c=sb();if(c){const {error}=await c.from('reports').insert({reporter_device:DEV,room:Online.st.code||'',reported_name:String(m.name||'?'),reason:'hexmerge-chat',messages:['REPORTED: '+m.name+': '+m.txt].concat(msgs)});ok=!error;}}catch(e){}
+ if(ok)toast('🚩 Report sent — thank you. Tap ⛔ to block them too.',2500);else location.href='mailto:dhaval83@icloud.com?subject='+encodeURIComponent('Hex Merge report: '+m.name+' (room '+(Online.st.code||'')+')')+'&body='+encodeURIComponent(msgs.join('\n'));}
+function blockMsg(k){const m=chatLog[k];if(!m)return;if(!confirm('Block '+(m.name||'this player')+'? You won\'t see their messages or rematch invites, and you\'ll be warned if they join your room.'))return;
+ const l=blocked();l.push({n:String(m.name||'').toLowerCase(),id:m.from||''});SS('hexmerge.blocked',l);for(let i=chatLog.length-1;i>=0;i--)if(isBlk(chatLog[i].name,chatLog[i].from))chatLog.splice(i,1);drawChat();toast('⛔ '+esc(m.name||'Player')+' blocked');}
+const blkInRoom=()=>(Online.st.seats||[]).some(x=>x&&!x.cpu&&x.id!==Online.st.id&&isBlk(x.name,x.id));
 function sendChat(t){t=String(t||'').trim().slice(0,200);if(!t)return;const m={name:profile.name,txt:t,from:Online.st.id};Online.chat(profile.name,t);chatLog.push(m);drawChat();$('chText').value='';}
-$('chatBtn').onclick=()=>{if(profile.chatOff){toast('Chat is off (Home → More)');return;}$('chatDot').classList.remove('on');drawChat();ov('chat');};$('chClose').onclick=()=>ov('chat',false);
+$('chatBtn').onclick=()=>{$('chatDot').classList.remove('on');drawChat();ov('chat');};$('chClose').onclick=()=>ov('chat',false);
+$('chlist').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.rep)reportMsg(+b.dataset.rep);else if(b.dataset.blk)blockMsg(+b.dataset.blk);};
+$('chMute').onclick=()=>{profile.chatOff=!profile.chatOff;saveProfile();drawChat();toast(profile.chatOff?'🔕 Chat muted (turn back on here or Home → More)':'🔔 Chat on');};
+$('chUnblk').onclick=()=>{if(confirm('Unblock all '+blocked().length+' blocked players?')){SS('hexmerge.blocked',[]);drawChat();}};
 $('chSend').onclick=()=>sendChat($('chText').value);$('chText').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat($('chText').value);});
 document.querySelector('.chemo').onclick=e=>{if(e.target.tagName==='BUTTON')sendChat(e.target.textContent);};
 // ---------- stars bg ----------

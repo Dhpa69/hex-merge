@@ -137,3 +137,6 @@ body.fx-firework .mg{animation:fxfire .7s ease-out}@keyframes fxfire{0%{filter:d
 .iapi.best{border-color:#ffd54a;box-shadow:0 0 10px #ffd54a55}.iapi em{position:absolute;top:-8px;right:6px;background:#ffd54a;color:#222;font-size:9px;font-weight:900;font-style:normal;padding:1px 6px;border-radius:8px}
 #iapRestore{display:block;margin:6px auto}.getapp{padding:8px;border:1px dashed #33407a;border-radius:10px}
 #pmenu .getcoins{border-color:#ffd54a;color:#ffd54a}
+
+/* v12 chat safety */
+.cmt{float:right}.cmt button{background:none;border:none;font-size:14px;padding:0 3px;cursor:pointer;opacity:.75}.chtool{width:auto;padding:4px 8px;font-size:13px;margin-left:auto}

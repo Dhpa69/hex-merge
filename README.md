@@ -6,3 +6,4 @@ Global leaderboard: run `supabase.sql` once in the Supabase SQL editor; until th
 
 ## Changelog
 - **v11** – Star Tiles–style real-money shop in the iPhone app (5 coin packs $0.99–$19.99, Remove Ads $2.99, Pro $4.99, Restore purchases); GET COINS from the coin balance and the ⚡ power-up menu. The website shows an "available in the iPhone app" note instead.
+- **v12** – Chat safety: 🚩 report a message (flags message + room for review), ⛔ block a player (hides their chat and rematch invites, warns when they're in your room), 🔔/🔕 mute chat in the chat window, Unblock.
