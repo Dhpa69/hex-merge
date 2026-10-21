@@ -130,3 +130,10 @@ body.fx-firework .mg{animation:fxfire .7s ease-out}@keyframes fxfire{0%{filter:d
 #ovX .btn{width:auto;margin:6px auto 0;display:inline-block;padding:8px 14px}
 
 .legal{font-size:12px;margin-top:8px}.legal a,#acctov a{color:#8fb4ff}.btn.danger{background:linear-gradient(#ff5a6e,#c81e3a)!important}
+/* v11 real-money shop */
+.iapbox{margin-bottom:10px}.iapg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.iapi{position:relative;background:#1b2350;border:1px solid #33407a;border-radius:12px;padding:10px 6px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.iapi b{font-size:15px}.iapi small{font-size:11px;color:#9fb0e0}.iapi .btn{width:100%;margin:2px 0 0}
+.iapi.best{border-color:#ffd54a;box-shadow:0 0 10px #ffd54a55}.iapi em{position:absolute;top:-8px;right:6px;background:#ffd54a;color:#222;font-size:9px;font-weight:900;font-style:normal;padding:1px 6px;border-radius:8px}
+#iapRestore{display:block;margin:6px auto}.getapp{padding:8px;border:1px dashed #33407a;border-radius:10px}
+#pmenu .getcoins{border-color:#ffd54a;color:#ffd54a}

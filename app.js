@@ -1,6 +1,6 @@
 'use strict';
 // Hex Merge v2 app: modes, UI, coins, missions, streaks, achievements, ranks, leaderboard, daily, online, team, share.
-const VER='v10',SITE='https://dhpa69.github.io/hex-merge/';
+const VER='v11',SITE='https://dhpa69.github.io/hex-merge/';
 const L=HexL,$=id=>document.getElementById(id);
 const COLORS=['','#3fd8ff','#4dff9a','#ffe14d','#ff9f40','#ff4f6d','#d45cff','#6f7bff','#ffffff','#ffd700'];
 const LS=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v;}catch(e){return d;}},SS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
